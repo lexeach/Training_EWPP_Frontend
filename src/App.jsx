@@ -13,7 +13,16 @@ function App() {
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' या 'profile'
+  // 💡 सुधार: अगर यूजर लॉगिन है और पेड है तो सीधे 'dashboard' पर जाए, वरना 'profile' पर रुके
+  const [currentView, setCurrentView] = useState(() => {
+    const savedUser = localStorage.getItem('partnerUser');
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      return parsed.isPaid ? 'dashboard' : 'profile';
+    }
+    return 'dashboard';
+  });
+
   const [resetToken, setResetToken] = useState(null);
   const [hasSynced, setHasSynced] = useState(false);
 
@@ -28,7 +37,7 @@ function App() {
     }
   }, []);
 
-  // 🚀 लाइव पेमेंट स्टेटस सिंक (केवल शुरुआती लोड पर काम करेगा, पेमेंट फ्लो को डिस्टर्ब नहीं करेगा)
+  // 🚀 लाइव पेमेंट स्टेटस सिंक (केवल शुरुआती फ्रेश लोड पर काम करेगा)
   useEffect(() => {
     const checkLivePaymentStatus = async () => {
       if (user && user.email && !hasSynced && !user.isPaid) {
@@ -41,7 +50,7 @@ function App() {
             if (freshUserData.isPaid) {
               setUser(freshUserData);
               localStorage.setItem('partnerUser', JSON.stringify(freshUserData));
-              setCurrentView('dashboard');
+              setCurrentView('dashboard'); // लाइव डेटाबेस में एक्टिव मिलते ही डैशबोर्ड खोलें
             }
           }
         } catch (error) {
@@ -80,12 +89,14 @@ function App() {
     window.location.href = "/";
   };
 
-  // 💡 मुख्य सुधार: जब प्रोफाइल से यूजर डेटा अपडेट होगा, तो व्यू भी तुरंत बदल जाएगा
+  // 💡 जादूई हैंडलर: प्रोफाइल से पेमेंट सक्सेस होने पर यह तुरंत व्यू को बदल देगा
   const handleUserUpdateFromProfile = (updatedUserData) => {
+    console.log("[APP] प्रोफाइल से लाइव डेटा अपडेट मिला:", updatedUserData);
     setUser(updatedUserData);
     localStorage.setItem('partnerUser', JSON.stringify(updatedUserData));
+    
     if (updatedUserData.isPaid) {
-      setCurrentView('dashboard'); // 🚀 तुरंत डैशबोर्ड व्यू एक्टिव करें
+      setCurrentView('dashboard'); // 🚀 बिल्कुल सुरक्षित तरीके से सीधे डैशबोर्ड पर भेजें
     }
   };
 
@@ -97,17 +108,20 @@ function App() {
     <>
       {!user ? (
         <Login onLoginSuccess={handleLoginSuccess} />
-      ) : (!user.isPaid) ? (
-        // 🔒 अगर यूजर ने पे नहीं किया है, तो उसे केवल प्रोफाइल/पेमेंट स्क्रीन दिखेगी
+      ) : (currentView === 'profile') ? ( // 💡 अब रेंडरिंग का फैसला सिर्फ 'currentView' स्टेट करेगी, user.isPaid की असिंक्रोनस रेस कंडीशन यहाँ खत्म!
         <Profile 
           user={user} 
-          setUser={handleUserUpdateFromProfile} // 💡 यहाँ अपना नया हैंडलर पास किया
+          setUser={handleUserUpdateFromProfile} 
           onBack={() => {
-            alert("🛑 ट्रेनिंग शुरू करने के लिए कृपया पहले फीस का भुगतान करें।");
+            // अगर यूजर वाकई पेड हो चुका है, तो उसे जाने दें
+            if (user.isPaid || JSON.parse(localStorage.getItem('partnerUser'))?.isPaid) {
+              setCurrentView('dashboard');
+            } else {
+              alert("🛑 ट्रेनिंग शुरू करने के लिए कृपया पहले फीस का भुगतान करें।");
+            }
           }} 
         />
       ) : (
-        // 🟢 पेड (Paid) यूजर्स या 'dashboard' व्यू के लिए
         <Dashboard 
           user={user} 
           setUser={setUser} 

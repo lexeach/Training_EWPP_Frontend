@@ -42,12 +42,13 @@ export default function Profile({ user, onBack, setUser }) {
               
               const freshUser = verifyResponse.data.user || { ...user, isPaid: true };
               
-              // 💡 पैरेंट स्टेट (App.jsx) को अपडेट करें, जिससे वह खुद-ब-खुद डैशबोर्ड खोल देगा
+              // 1. लोकल स्टेट को तुरंत ग्रीन डॉट दिखाने के लिए अपडेट करें
+              setIsPaid(true);
+              
+              // 2. पैरेंट कंपोनेंट (App.jsx) को सूचित करें ताकि वह सीधे 'dashboard' व्यू रेंडर कर दे
               if (setUser) {
                 setUser(freshUser); 
               }
-              
-              setIsPaid(true);
             } else {
               alert("🛑 वेरिफिकेशन फेल: " + (verifyResponse.data.message || "अमान्य सिग्नेचर"));
               setLoading(false);
