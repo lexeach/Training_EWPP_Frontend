@@ -4,23 +4,52 @@ import Login from './views/Login';
 import Dashboard from './views/Dashboard';
 import Profile from './views/Profile';
 import ResetPassword from './views/ResetPassword';
+import axios from 'axios'; // 💡 लेटेस्ट पेमेंट स्टेटस मंगाने के लिए
 
 function App() {
+  // लोकलस्टोरेज से यूजर का शुरुआती सेशन निकालना
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('partnerUser');
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  const [currentView, setCurrentView] = useState('dashboard');
+  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' या 'profile'
   const [resetToken, setResetToken] = useState(null);
 
+  // 🚀 1. लाइव पेमेंट स्टेटस चेक (Every Time App Loads / Refreshes)
   useEffect(() => {
-    // 💡 यूआरएल से ?resetToken=xxxx को ढूंढने का सबसे सेफ तरीका
+    const checkLivePaymentStatus = async () => {
+      // अगर यूजर लॉगिन है, तभी सर्वर से लेटेस्ट डेटा चेक करो
+      if (user && user.email) {
+        try {
+          console.log("[APP] सर्वर से यूजर का लेटेस्ट पेमेंट स्टेटस मंगाया जा रहा है...");
+          
+          // 💡 ध्यान दें: यहाँ अपने असली प्रोफाइल या यूजर डिटेल्स वाले API एंडपॉइंट का यूआरएल डालें
+          // अगर आपके पास कोई विशिष्ट एंडपॉइंट नहीं है, तो आप ईमेल के ज़रिए यूजर डिटेल्स मंगा सकते हैं
+          const res = await axios.post("https://training-ewpp-backend.onrender.com/api/auth/get-profile", { email: user.email });
+          
+          if (res.data && res.data.success) {
+            const freshUserData = res.data.user;
+            console.log("[APP SUCCESS] सर्वर से मिला लेटेस्ट isPaid स्टेटस:", freshUserData.isPaid);
+            
+            // स्टेट और लोकलस्टोरेज दोनों को एकदम फ्रेश डेटा से बदल दें
+            setUser(freshUserData);
+            localStorage.setItem('partnerUser', JSON.stringify(freshUserData));
+          }
+        } catch (error) {
+          console.error("[APP ERROR] लेटेस्ट पेमेंट स्टेटस सिंक करने में विफल:", error.message);
+        }
+      }
+    };
+
+    checkLivePaymentStatus();
+  }, []); // यह ऐप के बिल्कुल शुरुआती लोड पर चलेगा
+
+  // 🚀 2. पासवर्ड रीसेट टोकन चेक (पुराना वर्किंग लॉजिक)
+  useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
     const token = queryParams.get('resetToken');
-    
     if (token) {
-      console.log("URL me reset token mila:", token);
       setResetToken(token);
     }
   }, []);
@@ -28,6 +57,8 @@ function App() {
   const handleLoginSuccess = (userData) => {
     setUser(userData);
     localStorage.setItem('partnerUser', JSON.stringify(userData));
+    
+    // अगर यूजर ने पेमेंट नहीं किया है, तो सीधे प्रोफाइल (Payment Screen) पर भेजें
     if (!userData.isPaid) {
       setCurrentView('profile');
     } else {
@@ -43,21 +74,21 @@ function App() {
 
   const handleResetComplete = () => {
     setResetToken(null);
-    // यूआरएल को पूरी तरह साफ करके क्लीन डोमेन बना देना
     window.history.pushState({}, document.title, "/"); 
   };
 
-  // 🎯 कंडीशन 1: अगर यूआरएल में रीसेट टोकन मौजूद है, तो पासवर्ड बदलने का फॉर्म दिखाओ
+  // 🎯 कंडीशन 1: पासवर्ड रीसेट स्क्रीन
   if (resetToken) {
     return <ResetPassword token={resetToken} onComplete={handleResetComplete} />;
   }
 
-  // 🎯 कंडीशन 2: नॉर्मल फ्लो
+  // 🎯 कंडीशन 2: सामान्य लॉगिन/डैशबोर्ड फ्लो
   return (
     <>
       {!user ? (
         <Login onLoginSuccess={handleLoginSuccess} />
       ) : (!user.isPaid || currentView === 'profile') ? (
+        // 🔒 अगर यूजर ने पे नहीं किया है या वो प्रोफाइल देखना चाहता है
         <Profile 
           user={user} 
           onBack={() => {
@@ -69,6 +100,7 @@ function App() {
           }} 
         />
       ) : (
+        // 🟢 केवल पेड (Paid) यूजर्स ही डैशबोर्ड देख पाएंगे
         <Dashboard 
           user={user} 
           setUser={setUser} 
