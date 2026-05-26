@@ -10,20 +10,21 @@ export default function Profile({ user, onBack, setUser }) {
 
   const handlePayment = async () => {
     setLoading(true);
+    console.log("[FRONTEND LOG] Pay Now बटन क्लिक हुआ। Current User Props:", user);
+    
     try {
-      // 1. बैकएंड से सीधे लाइव Razorpay Key ID लेकर आना
+      console.log("[FRONTEND LOG] Keys और Order ID के लिए बैकएंड को कॉल कर रहे हैं...");
       const keyResponse = await axios.get(`${BACKEND_URL}/payment/key`);
       const razorpayKey = keyResponse.data.key;
 
-      // 2. बैकएंड से ऑर्डर आईडी जनरेट करना
       const orderResponse = await axios.post(`${BACKEND_URL}/payment/order`, {
         amount: 999,
         userId: user._id
       });
 
       const { id: order_id, currency, amount } = orderResponse.data;
+      console.log("[FRONTEND LOG] Razorpay Order Generated Successfully. Order ID:", order_id);
 
-      // 3. Razorpay के ऑप्शंस सेट करना
       const options = {
         key: razorpayKey,
         amount: amount,
@@ -32,8 +33,11 @@ export default function Profile({ user, onBack, setUser }) {
         description: "चैनल पार्टनर ट्रेनिंग FEES भुगतान",
         order_id: order_id,
         handler: async function (response) {
+          console.log("=== 🟢 FRONTEND RAZORPAY SUCCESS HANDLER TRIGGERED ===");
+          console.log("Razorpay Response Object:", response);
+          
           try {
-            console.log("[FRONTEND] Verification request bhej rahe hain...");
+            console.log("[FRONTEND LOG] बैकएंड के /verify एंडपॉइंट पर डेटा भेज रहे हैं...");
             const verifyResponse = await axios.post(`${BACKEND_URL}/payment/verify`, {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -41,25 +45,32 @@ export default function Profile({ user, onBack, setUser }) {
               userId: user._id
             });
 
+            console.log("[FRONTEND LOG] बैकएंड से /verify का रिस्पॉन्स आया:", verifyResponse.data);
+
             if (verifyResponse.data.success) {
-              // 💡 DATABASE CONFIRMATION: बैकएंड से आया हुआ फ्रेश यूजर डेटा उठाएं
               const freshUserFromDB = verifyResponse.data.user;
+              
+              console.log("[FRONTEND LOG] रिस्पॉन्स के अंदर का User object:", freshUserFromDB);
+              console.log("[FRONTEND LOG] freshUserFromDB.isPaid की वैल्यू:", freshUserFromDB?.isPaid);
+
+              // 💡 लाइव अलर्ट जो सच उगलवाएगा
+              alert(
+                `📢 [FRONTEND LOG REPORT]\n\n` +
+                `1. API Success Status: ${verifyResponse.data.success}\n` +
+                `2. Database user found: ${freshUserFromDB ? "YES" : "NO"}\n` +
+                `3. Database isPaid Value: ${freshUserFromDB?.isPaid}\n\n` +
+                `अगर ऊपर isPaid की वैल्यू true है, तो डेटाबेस अपडेट हो गया है!`
+              );
 
               if (freshUserFromDB && freshUserFromDB.isPaid) {
-                alert("🎉 भुगतान सफल रहा और डेटाबेस में सुरक्षित सेव हो गया है!");
-                
-                // लोकलस्टोरेज अपडेट करें
                 localStorage.setItem('partnerUser', JSON.stringify(freshUserFromDB));
-                
-                // लोकल स्टेट ग्रीन डॉट के लिए
                 setIsPaid(true);
                 
-                // पैरेंट स्टेट (App.jsx) को अपडेट करें ताकि ऑटो-रीडायरेक्ट तुरंत चले
                 if (setUser) {
                   setUser(freshUserFromDB); 
                 }
               } else {
-                alert("🛑 अलर्ट: पेमेंट तो हो गई, पर डेटाबेस में isPaid: true अपडेट नहीं हुआ। बैकएंड लॉग्स देखें!");
+                alert("🛑 गंभीर चेतावनी: बैकएंड ने success: true दिया, लेकिन लौटे हुए डेटा में isPaid अभी भी false या undefined है!");
                 setLoading(false);
               }
             } else {
@@ -67,8 +78,8 @@ export default function Profile({ user, onBack, setUser }) {
               setLoading(false);
             }
           } catch (err) {
-            console.error("Verification Error:", err);
-            alert("🛑 वेरिफिकेशन सर्वर रिस्पॉन्स फेल।");
+            console.error("[FRONTEND CATCH ERROR] Verification Request Failed:", err);
+            alert("🛑 वेरिफिकेशन सर्वर रिस्पॉन्स फेल। एरर लॉग्स देखें।");
             setLoading(false);
           }
         },
@@ -82,6 +93,7 @@ export default function Profile({ user, onBack, setUser }) {
         },
         modal: {
           ondismiss: function() {
+            console.log("[FRONTEND LOG] यूजर ने पेमेंट गेटवे पॉपअप बंद कर दिया।");
             setLoading(false);
           }
         }
@@ -91,7 +103,7 @@ export default function Profile({ user, onBack, setUser }) {
       rzp.open();
 
     } catch (error) {
-      console.error("Payment Initialization Failed:", error);
+      console.error("[FRONTEND CATCH ERROR] Payment Initialization Failed:", error);
       alert("🛑 पेमेंट गेटवे लोड नहीं हो सका। कृपया अपनी Render Env Keys चेक करें।");
       setLoading(false);
     }
