@@ -1,7 +1,7 @@
 // frontend/src/components/Header.jsx
 import React from 'react';
 
-export default function Header({ user, onLogout }) {
+export default function Header({ user, onLogout, onProfileClick }) {
   return (
     <header style={{
       display: 'flex',
@@ -18,7 +18,23 @@ export default function Header({ user, onLogout }) {
       </div>
       
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <span style={{ fontSize: '15px' }}>👤 पार्टनर: <strong>{user?.name}</strong></span>
+        {/* पार्टनर के नाम पर क्लिक करने पर प्रोफाइल खुलेगी */}
+        <span 
+          onClick={onProfileClick}
+          style={{ 
+            fontSize: '15px', 
+            cursor: 'pointer',
+            padding: '5px 10px',
+            borderRadius: '4px',
+            transition: '0.2s',
+            userSelect: 'none'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.background = '#334155'}
+          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+        >
+          👤 पार्टनर: <strong>{user?.name || 'Gautam'}</strong>
+        </span>
+        
         <button 
           onClick={onLogout}
           style={{
@@ -28,6 +44,7 @@ export default function Header({ user, onLogout }) {
             padding: '6px 15px',
             borderRadius: '4px',
             fontWeight: 'bold',
+            cursor: 'pointer',
             transition: '0.2s'
           }}
           onMouseOver={(e) => e.target.style.background = '#dc2626'}

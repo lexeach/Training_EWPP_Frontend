@@ -5,14 +5,14 @@ import Sidebar from '../components/Sidebar';
 import VideoPlayer from '../components/VideoPlayer';
 import { ProgressProvider } from '../context/ProgressContext';
 
-export default function Dashboard({ user, setUser, onLogout }) {
+export default function Dashboard({ user, setUser, onLogout, onProfileClick }) {
   return (
     // प्रोग्रेस प्रोवाइडर में यूजर स्टेट पास कर रहे हैं ताकि पूरे डैशबोर्ड में डेटा लाइव रहे
     <ProgressProvider user={user} setUser={setUser}>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         
-        {/* 1. TOP BAR */}
-        <Header user={user} onLogout={onLogout} />
+        {/* 1. TOP BAR (यहाँ हमने profile क्लिक हैंडलर पास कर दिया है) */}
+        <Header user={user} onLogout={onLogout} onProfileClick={onProfileClick} />
         
         {/* MAIN BODY CONTAINER */}
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
