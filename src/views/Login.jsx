@@ -41,10 +41,11 @@ export default function Login({ onLoginSuccess }) {
     try {
       const res = await axios.post(`${BACKEND_URL}/auth-utils/forgot-password`, { email });
       if (res.data.success) {
-        alert("🎉 पासवर्ड रीसेट लिंक आपकी ईमेल पर भेज दिया गया है। कृपया अपना इनबॉक्स या स्पैम फोल्डर चेक करें।");
+        alert("🎉 पासवर्ड रीसेट लिंक आपकी ईमेल पर भेज दिया गया है।");
         setView('login');
       }
     } catch (err) {
+      // 💡 अब यह सर्वर की असली एरर को स्क्रीन पर दिखाएगा!
       alert(err.response?.data?.message || "लिंक भेजने में समस्या आई।");
     } finally {
       setLoading(false);
