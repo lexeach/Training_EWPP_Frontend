@@ -7,70 +7,58 @@ import ResetPassword from './views/ResetPassword';
 import axios from 'axios';
 
 function App() {
-  // LocalStorage se session check karna
+  // लोकलस्टोरेज से यूजर का शुरुआती सेशन निकालना
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('partnerUser');
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' ya 'profile'
+  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' या 'profile'
   const [resetToken, setResetToken] = useState(null);
   const [hasSynced, setHasSynced] = useState(false);
 
-  // 🚀 1. Password Reset URL Check (Omitted for brevity - but keep your fixed code here)
+  // 🚀 पासवर्ड रीसेट टोकन चेक
   useEffect(() => {
-    // Check path variable (/reset-password/xxx)
     if (window.location.pathname.includes('/reset-password/')) {
       const parts = window.location.pathname.split('/');
       const token = parts[parts.length - 1];
       if (token) {
-        console.log("[APP] Reset Token detected:", token);
         setResetToken(token);
       }
     }
   }, []);
 
-  // 🚀 2. Live Payment Status Sync (Tight & Robust Logic)
+  // 🚀 लाइव पेमेंट स्टेटस सिंक (केवल शुरुआती लोड पर काम करेगा, पेमेंट फ्लो को डिस्टर्ब नहीं करेगा)
   useEffect(() => {
     const checkLivePaymentStatus = async () => {
-      // 💡 Check condition: Sirf tabhi sync karega jab user logged in ho, 
-      // is session mein sync na hua ho, aur local status 'Unpaid' ho.
       if (user && user.email && !hasSynced && !user.isPaid) {
         try {
-          console.log("[APP] Server se live payment status verify kiya ja raha hai...");
+          console.log("[APP] सर्वर से लाइव पेमेंट स्टेटस वेरीफाई किया जा रहा है...");
           const res = await axios.post("https://training-ewpp-backend.onrender.com/api/auth-utils/get-profile", { email: user.email });
           
           if (res.data && res.data.success) {
             const freshUserData = res.data.user;
-            console.log("[APP SUCCESS] Server live status isPaid:", freshUserData.isPaid);
-            
-            // 💡 Overwrite only if database is definitively 'Paid'.
-            // Agar database server delay se false de rha hai, toh local unpaid par rehene do.
-            if (freshUserData.isPaid && !user.isPaid) {
+            if (freshUserData.isPaid) {
               setUser(freshUserData);
               localStorage.setItem('partnerUser', JSON.stringify(freshUserData));
-              
-              // Database update confirmed - auto switch view
               setCurrentView('dashboard');
             }
           }
         } catch (error) {
-          console.error("[APP ERROR] Live status sync fail:", error.message);
+          console.error("[APP ERROR] लाइव स्टेटस सिंक फेल:", error.message);
         } finally {
-          // Set to true regardless of database status, blocking further background calls.
-          // This stops the infinite loop and race condition.
           setHasSynced(true);
         }
       }
     };
 
     checkLivePaymentStatus();
-  }, [user]); // 💡 Dependency strictly on 'user' object change.
+  }, [hasSynced]);
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
     localStorage.setItem('partnerUser', JSON.stringify(userData));
-    setHasSynced(false); // New login requires fresh sync.
+    setHasSynced(false);
     
     if (!userData.isPaid) {
       setCurrentView('profile');
@@ -89,50 +77,40 @@ function App() {
   const handleResetComplete = () => {
     setResetToken(null);
     window.history.pushState({}, document.title, "/"); 
-    window.location.href = "/"; // Force redirect to clean route
+    window.location.href = "/";
   };
 
-  // Custom function to handle direct user update from components (like Profile.jsx)
-  const handleUserUpdate = (updatedUserData) => {
-    console.log("[APP USER UPDATE] Manual update received:", updatedUserData);
+  // 💡 मुख्य सुधार: जब प्रोफाइल से यूजर डेटा अपडेट होगा, तो व्यू भी तुरंत बदल जाएगा
+  const handleUserUpdateFromProfile = (updatedUserData) => {
     setUser(updatedUserData);
     localStorage.setItem('partnerUser', JSON.stringify(updatedUserData));
-    
-    // Set view if database update is confirmed
     if (updatedUserData.isPaid) {
-      setCurrentView('dashboard');
-      setHasSynced(true); // Treat as synced to block immediate background loop
+      setCurrentView('dashboard'); // 🚀 तुरंत डैशबोर्ड व्यू एक्टिव करें
     }
   };
 
-  // 🎯 CONDITION 1: Password Reset Screen
   if (resetToken) {
     return <ResetPassword token={resetToken} onComplete={handleResetComplete} />;
   }
 
-  // 🎯 CONDITION 2: Auth & Core App Flow
   return (
     <>
       {!user ? (
         <Login onLoginSuccess={handleLoginSuccess} />
-      ) : (!user.isPaid || currentView === 'profile') ? (
-        // 🔒 Profile View / Payment Required Screen
+      ) : (!user.isPaid) ? (
+        // 🔒 अगर यूजर ने पे नहीं किया है, तो उसे केवल प्रोफाइल/पेमेंट स्क्रीन दिखेगी
         <Profile 
           user={user} 
-          setUser={handleUserUpdate} 
+          setUser={handleUserUpdateFromProfile} // 💡 यहाँ अपना नया हैंडलर पास किया
           onBack={() => {
-            if (user.isPaid) {
-              setCurrentView('dashboard');
-            } else {
-              alert("🛑 ट्रेनिंग शुरू करने के लिए कृपया पहले फीस का भुगतान करें।");
-            }
+            alert("🛑 ट्रेनिंग शुरू करने के लिए कृपया पहले फीस का भुगतान करें।");
           }} 
         />
       ) : (
-        // 🟢 Main Authorized Dashboard
+        // 🟢 पेड (Paid) यूजर्स या 'dashboard' व्यू के लिए
         <Dashboard 
           user={user} 
-          setUser={handleUserUpdate} 
+          setUser={setUser} 
           onLogout={handleLogout} 
           onProfileClick={() => setCurrentView('profile')} 
         />
