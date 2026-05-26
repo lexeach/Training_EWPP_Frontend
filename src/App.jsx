@@ -7,61 +7,72 @@ import ResetPassword from './views/ResetPassword';
 import axios from 'axios';
 
 function App() {
-  // लोकलस्टोरेज से यूजर का शुरुआती सेशन निकालना
+  // LocalStorage se session check karna
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('partnerUser');
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' या 'profile'
+  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' ya 'profile'
   const [resetToken, setResetToken] = useState(null);
-  const [hasSynced, setHasSynced] = useState(false); // 💡 स्टेट्स के साथ सही जगह सेट किया
+  const [hasSynced, setHasSynced] = useState(false);
 
-  // 🚀 1. लाइव पेमेंट स्टेटस चेक (केवल ऐप के एकदम शुरुआती फ्रेश लोड/रीफ्रेश पर काम करेगा)
+  // 🚀 1. Robust Password Reset URL Check (Fixes Blank Screen)
+  useEffect(() => {
+    // Check query param (?resetToken=xxx)
+    const queryParams = new URLSearchParams(window.location.search);
+    let token = queryParams.get('resetToken');
+
+    // Check path variable (/reset-password/xxx)
+    if (!token && window.location.pathname.includes('/reset-password/')) {
+      const parts = window.location.pathname.split('/');
+      token = parts[parts.length - 1];
+    }
+
+    if (token) {
+      console.log("[APP] Reset Token detected:", token);
+      setResetToken(token);
+    }
+  }, []);
+
+  // 🚀 2. Live Payment Status Sync
   useEffect(() => {
     const checkLivePaymentStatus = async () => {
-      // अगर यूजर लॉगिन है और इस सेशन में डेटाबेस से सिंक नहीं हुआ है
       if (user && user.email && !hasSynced) {
         try {
-          console.log("[APP] सर्वर से लाइव पेमेंट स्टेटस वेरीफाई किया जा रहा है...");
+          console.log("[APP] Server se live payment status verify kiya ja raha hai...");
           const res = await axios.post("https://training-ewpp-backend.onrender.com/api/auth-utils/get-profile", { email: user.email });
           
           if (res.data && res.data.success) {
             const freshUserData = res.data.user;
-            console.log("[APP SUCCESS] सर्वर से मिला लाइव स्टेटस:", freshUserData.isPaid);
+            console.log("[APP SUCCESS] Server live status isPaid:", freshUserData.isPaid);
             
-            // 💡 केवल तभी सिंक करेंगे जब डेटाबेस में स्थिति बदल चुकी हो, ताकि रेस कंडीशन न बने
             if (freshUserData.isPaid !== user.isPaid) {
               setUser(freshUserData);
               localStorage.setItem('partnerUser', JSON.stringify(freshUserData));
+              
+              // Agar background mein database paid mila to auto dashboard view set karein
+              if (freshUserData.isPaid) {
+                setCurrentView('dashboard');
+              }
             }
           }
         } catch (error) {
-          console.error("[APP ERROR] लाइव स्टेटस सिंक फेल:", error.message);
+          console.error("[APP ERROR] Live status sync fail:", error.message);
         } finally {
-          setHasSynced(true); // सिंक का प्रयास पूरा हुआ, अब दोबारा लूप नहीं चलेगा
+          setHasSynced(true);
         }
       }
     };
 
     checkLivePaymentStatus();
-  }, [hasSynced]); // 💡 डिपेंडेंसी से 'user' हटाया ताकि बेवजह बार-बार एपीआई हिट न हो
-
-  // 🚀 2. पासवर्ड रीसेट टोकन चेक (पुराना वर्किंग लॉजिक)
-  useEffect(() => {
-    const queryParams = new URLSearchParams(window.location.search);
-    const token = queryParams.get('resetToken');
-    if (token) {
-      setResetToken(token);
-    }
-  }, []);
+  }, [hasSynced]);
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
     localStorage.setItem('partnerUser', JSON.stringify(userData));
-    setHasSynced(false); // 💡 नए लॉगिन पर दोबारा सिंक की अनुमति दें
+    setHasSynced(false);
     
-    // अगर यूजर ने पेमेंट नहीं किया है, तो सीधे प्रोफाइल (Payment Screen) पर भेजें
     if (!userData.isPaid) {
       setCurrentView('profile');
     } else {
@@ -79,23 +90,32 @@ function App() {
   const handleResetComplete = () => {
     setResetToken(null);
     window.history.pushState({}, document.title, "/"); 
+    window.location.href = "/"; // Force redirect to clean route
   };
 
-  // 🎯 कंडीशन 1: पासवर्ड रीसेट स्क्रीन
+  // Custom function to handle direct user update from components (like Profile.jsx)
+  const handleUserUpdate = (updatedUserData) => {
+    setUser(updatedUserData);
+    if (updatedUserData.isPaid) {
+      setCurrentView('dashboard'); // 💡 Payment success hote hi turant dashboard view set karega
+    }
+  };
+
+  // 🎯 CONDITION 1: Password Reset Screen (Fixes Blank Page)
   if (resetToken) {
     return <ResetPassword token={resetToken} onComplete={handleResetComplete} />;
   }
 
-  // 🎯 Condition 2: Normal Login / Dashboard Flow
+  // 🎯 CONDITION 2: Auth & Core App Flow
   return (
     <>
       {!user ? (
         <Login onLoginSuccess={handleLoginSuccess} />
       ) : (!user.isPaid || currentView === 'profile') ? (
-        // 🔒 अगर यूजर ने पे नहीं किया है या वो प्रोफाइल देखना चाहता है
+        // 🔒 Profile View / Payment Required Screen
         <Profile 
           user={user} 
-          setUser={setUser} // 🚀 सबसे बड़ी गड़बड़ यही थी, इसे अब पास कर दिया है!
+          setUser={handleUserUpdate} // 💡 Ab custom handler view ko toggle karega
           onBack={() => {
             if (user.isPaid) {
               setCurrentView('dashboard');
@@ -105,10 +125,10 @@ function App() {
           }} 
         />
       ) : (
-        // 🟢 केवल पेड (Paid) यूजर्स ही डैशबोर्ड देख पाएंगे
+        // 🟢 Main Authorized Dashboard
         <Dashboard 
           user={user} 
-          setUser={setUser} 
+          setUser={handleUserUpdate} 
           onLogout={handleLogout} 
           onProfileClick={() => setCurrentView('profile')} 
         />
