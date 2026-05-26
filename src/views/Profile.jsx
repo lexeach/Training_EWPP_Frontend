@@ -6,13 +6,16 @@ export default function Profile({ user, onBack }) {
   const [isPaid, setIsPaid] = useState(user.isPaid || false);
   const [loading, setLoading] = useState(false);
 
-  // 💡 सुनिश्चित करें कि यह आपके लाइव बैकएंड का सही URL है
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
 
   const handlePayment = async () => {
     setLoading(true);
     try {
-      // 1. बैकएंड से ऑर्डर आईडी जनरेट करना
+      // 1. बैकएंड से सीधे लाइव Razorpay Key ID लेकर आना
+      const keyResponse = await axios.get(`${BACKEND_URL}/payment/key`);
+      const razorpayKey = keyResponse.data.key;
+
+      // 2. बैकएंड से ऑर्डर आईडी जनरेट करना
       const orderResponse = await axios.post(`${BACKEND_URL}/payment/order`, {
         amount: 999,
         userId: user._id
@@ -20,17 +23,17 @@ export default function Profile({ user, onBack }) {
 
       const { id: order_id, currency, amount } = orderResponse.data;
 
-      // 2. Razorpay के ऑप्शंस सेट करना
+      // 3. Razorpay के ऑप्शंस सेट करना
       const options = {
-        key: "rzp_test_YOUR_KEY_HERE", // 👈 यहाँ अपनी Razorpay Test Key ID डालें (जैसे rzp_test_xxxx)
+        key: razorpayKey, // 💡 अब यह ऑटोमैटिक रेंडर के एनवायरनमेंट से की उठाएगा
         amount: amount,
         currency: currency,
         name: "EWPP Training Portal",
-        description: "चैनल पार्टनर ट्रेनिंग फीस भुगतान",
+        description: "चैनल पार्टनर ट्रेनिंग FEES भुगतान",
         order_id: order_id,
         handler: async function (response) {
           try {
-            // 3. पेमेंट वेरिफिकेशन के लिए डेटा भेजना
+            // 4. पेमेंट वेरिफिकेशन के लिए डेटा भेजना
             const verifyResponse = await axios.post(`${BACKEND_URL}/payment/verify`, {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -42,18 +45,18 @@ export default function Profile({ user, onBack }) {
               alert("🎉 भुगतान सफल रहा! आपकी ट्रेनिंग एक्टिवेट हो गई है।");
               setIsPaid(true);
               
-              // लोकल स्टोरेज अपडेट करना
+              // लोकल स्टोरेज अपडेट करके फ्रेश रीलोड करना
               const updatedUser = { ...user, isPaid: true };
               localStorage.setItem('partnerUser', JSON.stringify(updatedUser));
-              
-              // पेज रिफ्रेश ताकि डैशबोर्ड खुल जाए
               window.location.reload();
             } else {
               alert("🛑 वेरिफिकेशन फेल: " + (verifyResponse.data.message || "अमान्य सिग्नेचर"));
+              setLoading(false);
             }
           } catch (err) {
-            console.error("Verification Error Context:", err);
-            alert("🛑 Oops! Something went wrong. Payment Failed");
+            console.error("Verification Error:", err);
+            alert("🛑 वेरिफिकेशन सर्वर रिस्पॉन्स फेल।");
+            setLoading(false);
           }
         },
         prefill: {
@@ -76,14 +79,13 @@ export default function Profile({ user, onBack }) {
 
     } catch (error) {
       console.error("Payment Initialization Failed:", error);
-      alert("🛑 ऑर्डर जनरेट करने में समस्या आई। कृपया दोबारा प्रयास करें।");
+      alert("🛑 पेमेंट गेटवे लोड नहीं हो सका। कृपया अपनी Render Env Keys चेक करें।");
       setLoading(false);
     }
   };
 
   return (
     <div style={{ padding: '30px', maxWidth: '800px', margin: '0 auto', color: '#1e293b' }}>
-      
       <button 
         onClick={onBack}
         style={{ padding: '8px 16px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px' }}
@@ -123,10 +125,6 @@ export default function Profile({ user, onBack }) {
           >
             {loading ? 'प्रक्रिया शुरू हो रही है...' : '🔒 Pay Now ₹999'}
           </button>
-
-          <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '15px' }}>
-            ⚡ Razorpay द्वारा सुरक्षित भुगतान। UPI, कार्ड, नेटबैंकिंग आदि सभी उपलब्ध हैं।
-          </p>
         </div>
       )}
     </div>
