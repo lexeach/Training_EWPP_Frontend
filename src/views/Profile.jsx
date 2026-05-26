@@ -1,132 +1,44 @@
-// frontend/src/views/Profile.jsx
-import React, { useState } from 'react';
-import axios from 'axios';
+// frontend/src/views/Profile.jsx ke andar handlePayment ke andar ka options block
 
-export default function Profile({ user, onBack, setUser }) {
-  const [isPaid, setIsPaid] = useState(user.isPaid || false);
-  const [loading, setLoading] = useState(false);
+handler: async function (response) {
+  try {
+    console.log("[FRONTEND] Verification request bhej rahe hain...");
+    const verifyResponse = await axios.post(`${BACKEND_URL}/payment/verify`, {
+      razorpay_order_id: response.razorpay_order_id,
+      razorpay_payment_id: response.razorpay_payment_id,
+      razorpay_signature: response.razorpay_signature,
+      userId: user._id
+    });
 
-  const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
+    if (verifyResponse.data.success) {
+      // 💡 DATABASE CONFIRMATION: Backend se aaya hua fresh user data uthayein
+      const freshUserFromDB = verifyResponse.data.user;
 
-  const handlePayment = async () => {
-    setLoading(true);
-    try {
-      const keyResponse = await axios.get(`${BACKEND_URL}/payment/key`);
-      const razorpayKey = keyResponse.data.key;
-
-      const orderResponse = await axios.post(`${BACKEND_URL}/payment/order`, {
-        amount: 999,
-        userId: user._id
-      });
-
-      const { id: order_id, currency, amount } = orderResponse.data;
-
-      const options = {
-        key: razorpayKey,
-        amount: amount,
-        currency: currency,
-        name: "EWPP Training Portal",
-        description: "चैनल पार्टनर ट्रेनिंग FEES भुगतान",
-        order_id: order_id,
-        handler: async function (response) {
-          try {
-            const verifyResponse = await axios.post(`${BACKEND_URL}/payment/verify`, {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              userId: user._id
-            });
-
-            if (verifyResponse.data.success) {
-              alert("🎉 भुगतान सफल रहा! आपकी ट्रेनिंग एक्टिवेट हो गई है।");
-              
-              const freshUser = verifyResponse.data.user || { ...user, isPaid: true };
-              
-              // 1. लोकल स्टेट को तुरंत ग्रीन डॉट दिखाने के लिए अपडेट करें
-              setIsPaid(true);
-              
-              // 2. पैरेंट कंपोनेंट (App.jsx) को सूचित करें ताकि वह सीधे 'dashboard' व्यू रेंडर कर दे
-              if (setUser) {
-                setUser(freshUser); 
-              }
-            } else {
-              alert("🛑 वेरिफिकेशन फेल: " + (verifyResponse.data.message || "अमान्य सिग्नेचर"));
-              setLoading(false);
-            }
-          } catch (err) {
-            console.error("Verification Error:", err);
-            alert("🛑 वेरिफिकेशन सर्वर रिस्पॉन्स फेल।");
-            setLoading(false);
-          }
-        },
-        prefill: {
-          name: user.name || "Partner",
-          email: user.email || "partner@company.com",
-          contact: "9999380378"
-        },
-        theme: {
-          color: "#0284c7"
-        },
-        modal: {
-          ondismiss: function() {
-            setLoading(false);
-          }
+      if (freshUserFromDB && freshUserFromDB.isPaid) {
+        alert("🎉 भुगतान सफल रहा और डेटाबेस में सुरक्षित सेव हो गया है!");
+        
+        // LocalStorage mein save karein
+        localStorage.setItem('partnerUser', JSON.stringify(freshUserFromDB));
+        
+        // Local state ko true karein
+        setIsPaid(true);
+        
+        // Parent state (App.jsx) ko update karein jisse auto-redirect chal jaye
+        if (setUser) {
+          setUser(freshUserFromDB); 
         }
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-
-    } catch (error) {
-      console.error("Payment Initialization Failed:", error);
-      alert("🛑 पेमेंट गेटवे लोड नहीं हो सका। कृपया अपनी Render Env Keys चेक करें।");
+      } else {
+        // Agar payment success hui par backend ne user.isPaid: true nahi bheja
+        alert("🛑 Alert: पेमेंट तो हो गई, par database mein isPaid: true update nahi hua. Backend logs check karein!");
+        setLoading(false);
+      }
+    } else {
+      alert("🛑 वेरिफिकेशन फेल: " + (verifyResponse.data.message || "अमान्य सिग्नेचर"));
       setLoading(false);
     }
-  };
-
-  return (
-    <div style={{ padding: '30px', maxWidth: '800px', margin: '0 auto', color: '#1e293b' }}>
-      <button 
-        onClick={onBack}
-        style={{ padding: '8px 16px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px' }}
-      >
-        ← डैशबोर्ड पर लौटें
-      </button>
-
-      <div style={{ background: '#fff', padding: '25px', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', marginBottom: '20px' }}>
-        <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', marginTop: 0 }}>👤 पार्टनर प्रोफाइल डिटेल्स</h2>
-        <p><strong>नाम:</strong> {user.name || 'पार्टनर का नाम'}</p>
-        <p><strong>ईमेल:</strong> {user.email}</p>
-        <p><strong>अकाउंट स्टेटस:</strong> {isPaid ? '🟢 एक्टिव (ट्रेनिंग अनलॉक)' : '🔴 पेंडिंग (फीस जमा करें)'}</p>
-      </div>
-
-      {!isPaid && (
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '30px', borderRadius: '8px', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ marginTop: 0, color: '#0f172a' }}>💳 ट्रेनिंग फीस एक्टिवेशन (Razorpay Instant Pay)</h3>
-          <p style={{ color: '#64748b', maxWidth: '500px', margin: '10px auto 25px auto' }}>
-            सभी वीडियो मॉड्यूल्स को अनलॉक करने और ट्रेनिंग के बाद सर्टिफिकेट क्लेम करने के लिए आपको एक बार <strong>₹999/-</strong> की फीस का सुरक्षित भुगतान करना होगा।
-          </p>
-          
-          <button 
-            onClick={handlePayment}
-            disabled={loading}
-            style={{
-              background: '#0284c7',
-              color: '#fff',
-              border: 'none',
-              padding: '14px 40px',
-              borderRadius: '6px',
-              fontWeight: 'bold',
-              fontSize: '18px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              boxShadow: '0 4px 6px -1px rgba(2, 132, 199, 0.4)',
-              transition: 'all 0.2s'
-            }}
-          >
-            {loading ? 'प्रक्रिया शुरू हो रही है...' : '🔒 Pay Now ₹999'}
-          </button>
-        </div>
-      )}
-    </div>
-  );
+  } catch (err) {
+    console.error("Verification Error:", err);
+    alert("🛑 वेरिफिकेशन सर्ver रिस्पॉन्स फेल।");
+    setLoading(false);
+  }
 }
