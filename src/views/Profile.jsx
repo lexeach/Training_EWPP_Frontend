@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-// 💡 सुधार: प्रोप्स के अंदर setUser को रिसीव किया ताकि स्टेट को सीधा अपडेट किया जा सके
+// 💡 ध्यान दें: प्रोप्स में setUser (जो App.jsx से handleUserUpdate ला रहा है) बिल्कुल सही तरीके से रिसीव्ड है
 export default function Profile({ user, onBack, setUser }) {
   const [isPaid, setIsPaid] = useState(user.isPaid || false);
   const [loading, setLoading] = useState(false);
@@ -26,7 +26,7 @@ export default function Profile({ user, onBack, setUser }) {
 
       // 3. Razorpay के ऑप्शंस सेट करना
       const options = {
-        key: razorpayKey, // अब यह ऑटोमैटिक रेंडर के एनवायरनमेंट से की उठाएगा
+        key: razorpayKey,
         amount: amount,
         currency: currency,
         name: "EWPP Training Portal",
@@ -45,19 +45,20 @@ export default function Profile({ user, onBack, setUser }) {
             if (verifyResponse.data.success) {
               alert("🎉 भुगतान सफल रहा! आपकी ट्रेनिंग एक्टिवेट हो गई है।");
               
-              // बैकएंड से आया बिल्कुल लाइव अपडेटेड डेटा निकालें
+              // बैकएंड से आया बिल्कुल लाइव अपडेटेड डेटा जिसमें isPaid: true है
               const freshUser = verifyResponse.data.user || { ...user, isPaid: true };
               
-              // 💡 मज़बूत सुधार: लोकल स्टोरेज और पैरेंट स्टेट (setUser) दोनों को बिना रीफ्रेश किए तुरंत बदलें
+              // 1. सबसे पहले लोकल स्टोरेज में सेव करें
               localStorage.setItem('partnerUser', JSON.stringify(freshUser));
               
-              if (setUser) {
-                setUser(freshUser); // 🚀 यह तुरंत पूरे ऐप को 'Paid' मोड में री-रेंडर कर देगा
-              }
-              
+              // 2. लोकल स्टेट को true करें
               setIsPaid(true); 
               
-              // 🚫 window.location.reload(); को हटा दिया है ताकि सर्वर डिले के कारण ग्रीन डॉट वापस रेड न बने
+              // 🚀 3. मास्टर स्ट्राइक: पैरेंट स्टेट (App.jsx) को अपडेट करें ताकि 'currentView' तुरंत 'dashboard' बन जाए
+              if (setUser) {
+                setUser(freshUser); 
+              }
+              
             } else {
               alert("🛑 वेरिफिकेशन फेल: " + (verifyResponse.data.message || "अमान्य सिग्नेचर"));
               setLoading(false);
@@ -95,6 +96,7 @@ export default function Profile({ user, onBack, setUser }) {
 
   return (
     <div style={{ padding: '30px', maxWidth: '800px', margin: '0 auto', color: '#1e293b' }}>
+      {/* 💡 यहाँ ऑनबैक बटन का लॉजिक है, लेकिन पेमेंट के बाद इसकी भी जरूरत नहीं पड़ेगी */}
       <button 
         onClick={onBack}
         style={{ padding: '8px 16px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px' }}
@@ -111,7 +113,7 @@ export default function Profile({ user, onBack, setUser }) {
 
       {!isPaid && (
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '30px', borderRadius: '8px', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ marginTop: 0, color: '#0f172a' }}>💳 ट्रेनिंग फीस एक्टिवेशन (Razorpay Instant Pay)</h3>
+          <h3 style={{ marginTop: 0, color: '#0f172a' }}>💳 ट्रेनिंग FEES एक्टिवेशन (Razorpay Instant Pay)</h3>
           <p style={{ color: '#64748b', maxWidth: '500px', margin: '10px auto 25px auto' }}>
             सभी वीडियो मॉड्यूल्स को अनलॉक करने और ट्रेनिंग के बाद सर्टिफिकेट क्लेम करने के लिए आपको एक बार <strong>₹999/-</strong> की फीस का सुरक्षित भुगतान करना होगा।
           </p>
