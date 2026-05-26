@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-export default function Profile({ user, onBack }) {
+// 💡 सुधार: प्रोप्स के अंदर setUser को रिसीव किया ताकि स्टेट को सीधा अपडेट किया जा सके
+export default function Profile({ user, onBack, setUser }) {
   const [isPaid, setIsPaid] = useState(user.isPaid || false);
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +26,7 @@ export default function Profile({ user, onBack }) {
 
       // 3. Razorpay के ऑप्शंस सेट करना
       const options = {
-        key: razorpayKey, // 💡 अब यह ऑटोमैटिक रेंडर के एनवायरनमेंट से की उठाएगा
+        key: razorpayKey, // अब यह ऑटोमैटिक रेंडर के एनवायरनमेंट से की उठाएगा
         amount: amount,
         currency: currency,
         name: "EWPP Training Portal",
@@ -43,14 +44,20 @@ export default function Profile({ user, onBack }) {
 
             if (verifyResponse.data.success) {
               alert("🎉 भुगतान सफल रहा! आपकी ट्रेनिंग एक्टिवेट हो गई है।");
-              setIsPaid(true);
               
-              // 💡 सुधार: बैकएंड से आए लाइव अपडेटेड यूजर डेटा (जिसमें isPaid: true है) को सेव करें
+              // बैकएंड से आया बिल्कुल लाइव अपडेटेड डेटा निकालें
               const freshUser = verifyResponse.data.user || { ...user, isPaid: true };
+              
+              // 💡 मज़बूत सुधार: लोकल स्टोरेज और पैरेंट स्टेट (setUser) दोनों को बिना रीफ्रेश किए तुरंत बदलें
               localStorage.setItem('partnerUser', JSON.stringify(freshUser));
               
-              // फ्रेश रीलोड ताकि App.jsx का नया useEffect तुरंत लाइव डेटाबेस से सिंक कर ले
-              window.location.reload();
+              if (setUser) {
+                setUser(freshUser); // 🚀 यह तुरंत पूरे ऐप को 'Paid' मोड में री-रेंडर कर देगा
+              }
+              
+              setIsPaid(true); 
+              
+              // 🚫 window.location.reload(); को हटा दिया है ताकि सर्वर डिले के कारण ग्रीन डॉट वापस रेड न बने
             } else {
               alert("🛑 वेरिफिकेशन फेल: " + (verifyResponse.data.message || "अमान्य सिग्नेचर"));
               setLoading(false);
@@ -81,7 +88,7 @@ export default function Profile({ user, onBack }) {
 
     } catch (error) {
       console.error("Payment Initialization Failed:", error);
-      alert("🛑 पेमेंट गेटवे लोड नहीं हो सका। कृपया अपनी Render Env Keys चेक करें Eloquent.");
+      alert("🛑 पेमेंट गेटवे लोड नहीं हो सका। कृपया अपनी Render Env Keys चेक करें।");
       setLoading(false);
     }
   };

@@ -18,30 +18,36 @@ function App() {
 
   // 🚀 1. लाइव पेमेंट स्टेटस चेक (Every Time App Loads / Refreshes)
   // 🚀 1. लाइव पेमेंट स्टेटस चेक (App.jsx के अंदर का useEffect)
+// frontend/src/App.jsx के अंदर केवल इस useEffect को अपडेट करें:
+
+const [hasSynced, setHasSynced] = useState(false); // टॉप पर स्टेट्स के साथ इसे जोड़ें
+
 useEffect(() => {
   const checkLivePaymentStatus = async () => {
-    if (user && user.email) {
+    // अगर यूजर लॉगिन है और इस सेशन में अभी तक सिंक नहीं हुआ है
+    if (user && user.email && !hasSynced) {
       try {
-        console.log("[APP] सर्वर से यूजर का लेटेस्ट पेमेंट स्टेटस मंगाया जा रहा है...");
-        
-        // 💡 सही एंडपॉइंट पाथ: auth-utils/get-profile
+        console.log("[APP] सर्वर से लाइव पेमेंट स्टेटस वेरीफाई किया जा रहा है...");
         const res = await axios.post("https://training-ewpp-backend.onrender.com/api/auth-utils/get-profile", { email: user.email });
         
         if (res.data && res.data.success) {
           const freshUserData = res.data.user;
-          console.log("[APP SUCCESS] सर्वर से मिला लेटेस्ट isPaid स्टेटस:", freshUserData.isPaid);
           
-          setUser(freshUserData);
-          localStorage.setItem('partnerUser', JSON.stringify(freshUserData));
+          // 💡 अगर डेटाबेस में वाकई true हो चुका है, तभी लोकल स्टोरेज अपडेट करो
+          if (freshUserData.isPaid) {
+            setUser(freshUserData);
+            localStorage.setItem('partnerUser', JSON.stringify(freshUserData));
+          }
+          setHasSynced(true); // सिंक पूरा हुआ
         }
       } catch (error) {
-        console.error("[APP ERROR] लेटेस्ट पेमेंट स्टेटस सिंक करने में विफल:", error.message);
+        console.error("[APP ERROR] लाइव स्टेटस सिंक फेल:", error.message);
       }
     }
   };
 
   checkLivePaymentStatus();
-}, []);
+}, [user, hasSynced]);
 // यह ऐप के बिल्कुल शुरुआती लोड पर चलेगा
 
   // 🚀 2. पासवर्ड रीसेट टोकन चेक (पुराना वर्किंग लॉजिक)
