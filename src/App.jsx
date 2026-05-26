@@ -17,33 +17,32 @@ function App() {
   const [resetToken, setResetToken] = useState(null);
 
   // 🚀 1. लाइव पेमेंट स्टेटस चेक (Every Time App Loads / Refreshes)
-  useEffect(() => {
-    const checkLivePaymentStatus = async () => {
-      // अगर यूजर लॉगिन है, तभी सर्वर से लेटेस्ट डेटा चेक करो
-      if (user && user.email) {
-        try {
-          console.log("[APP] सर्वर से यूजर का लेटेस्ट पेमेंट स्टेटस मंगाया जा रहा है...");
+  // 🚀 1. लाइव पेमेंट स्टेटस चेक (App.jsx के अंदर का useEffect)
+useEffect(() => {
+  const checkLivePaymentStatus = async () => {
+    if (user && user.email) {
+      try {
+        console.log("[APP] सर्वर से यूजर का लेटेस्ट पेमेंट स्टेटस मंगाया जा रहा है...");
+        
+        // 💡 सही एंडपॉइंट पाथ: auth-utils/get-profile
+        const res = await axios.post("https://training-ewpp-backend.onrender.com/api/auth-utils/get-profile", { email: user.email });
+        
+        if (res.data && res.data.success) {
+          const freshUserData = res.data.user;
+          console.log("[APP SUCCESS] सर्वर से मिला लेटेस्ट isPaid स्टेटस:", freshUserData.isPaid);
           
-          // 💡 ध्यान दें: यहाँ अपने असली प्रोफाइल या यूजर डिटेल्स वाले API एंडपॉइंट का यूआरएल डालें
-          // अगर आपके पास कोई विशिष्ट एंडपॉइंट नहीं है, तो आप ईमेल के ज़रिए यूजर डिटेल्स मंगा सकते हैं
-          const res = await axios.post("https://training-ewpp-backend.onrender.com/api/auth/get-profile", { email: user.email });
-          
-          if (res.data && res.data.success) {
-            const freshUserData = res.data.user;
-            console.log("[APP SUCCESS] सर्वर से मिला लेटेस्ट isPaid स्टेटस:", freshUserData.isPaid);
-            
-            // स्टेट और लोकलस्टोरेज दोनों को एकदम फ्रेश डेटा से बदल दें
-            setUser(freshUserData);
-            localStorage.setItem('partnerUser', JSON.stringify(freshUserData));
-          }
-        } catch (error) {
-          console.error("[APP ERROR] लेटेस्ट पेमेंट स्टेटस सिंक करने में विफल:", error.message);
+          setUser(freshUserData);
+          localStorage.setItem('partnerUser', JSON.stringify(freshUserData));
         }
+      } catch (error) {
+        console.error("[APP ERROR] लेटेस्ट पेमेंट स्टेटस सिंक करने में विफल:", error.message);
       }
-    };
+    }
+  };
 
-    checkLivePaymentStatus();
-  }, []); // यह ऐप के बिल्कुल शुरुआती लोड पर चलेगा
+  checkLivePaymentStatus();
+}, []);
+// यह ऐप के बिल्कुल शुरुआती लोड पर चलेगा
 
   // 🚀 2. पासवर्ड रीसेट टोकन चेक (पुराना वर्किंग लॉजिक)
   useEffect(() => {

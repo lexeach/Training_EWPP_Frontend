@@ -45,9 +45,11 @@ export default function Profile({ user, onBack }) {
               alert("🎉 भुगतान सफल रहा! आपकी ट्रेनिंग एक्टिवेट हो गई है।");
               setIsPaid(true);
               
-              // लोकल स्टोरेज अपडेट करके फ्रेश रीलोड करना
-              const updatedUser = { ...user, isPaid: true };
-              localStorage.setItem('partnerUser', JSON.stringify(updatedUser));
+              // 💡 सुधार: बैकएंड से आए लाइव अपडेटेड यूजर डेटा (जिसमें isPaid: true है) को सेव करें
+              const freshUser = verifyResponse.data.user || { ...user, isPaid: true };
+              localStorage.setItem('partnerUser', JSON.stringify(freshUser));
+              
+              // फ्रेश रीलोड ताकि App.jsx का नया useEffect तुरंत लाइव डेटाबेस से सिंक कर ले
               window.location.reload();
             } else {
               alert("🛑 वेरिफिकेशन फेल: " + (verifyResponse.data.message || "अमान्य सिग्नेचर"));
@@ -79,7 +81,7 @@ export default function Profile({ user, onBack }) {
 
     } catch (error) {
       console.error("Payment Initialization Failed:", error);
-      alert("🛑 पेमेंट गेटवे लोड नहीं हो सका। कृपया अपनी Render Env Keys चेक करें।");
+      alert("🛑 पेमेंट गेटवे लोड नहीं हो सका। कृपया अपनी Render Env Keys चेक करें Eloquent.");
       setLoading(false);
     }
   };
