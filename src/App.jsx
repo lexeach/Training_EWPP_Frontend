@@ -9,24 +9,21 @@ import axios from 'axios';
 function App() {
   // लोकलस्टोरेज से यूजर का शुरुआती सेशन निकालना
   const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('partnerUser');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
-
-  // 💡 सुधार: अगर यूजर लॉगिन है और पेड है तो सीधे 'dashboard' पर जाए, वरना 'profile' पर रुके
-  const [currentView, setCurrentView] = useState(() => {
-    const savedUser = localStorage.getItem('partnerUser');
-    if (savedUser) {
-      const parsed = JSON.parse(savedUser);
-      return parsed.isPaid ? 'dashboard' : 'profile';
+    try {
+      const savedUser = localStorage.getItem('partnerUser');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (e) {
+      console.error("LocalStorage parsing error", e);
+      return null;
     }
-    return 'dashboard';
   });
 
+  // 💡 सुपर सेफ सुधार: शुरुआत में इसे हमेशा 'dashboard' रखें, क्रैश होने का चांस ही खत्म!
+  const [currentView, setCurrentView] = useState('dashboard'); 
   const [resetToken, setResetToken] = useState(null);
   const [hasSynced, setHasSynced] = useState(false);
 
-  // 🚀 पासवर्ड रीसेट टोकन चेक
+  // 🚀 1. पासवर्ड रीसेट टोकन चेक
   useEffect(() => {
     if (window.location.pathname.includes('/reset-password/')) {
       const parts = window.location.pathname.split('/');
@@ -37,7 +34,7 @@ function App() {
     }
   }, []);
 
-  // 🚀 लाइव पेमेंट स्टेटस सिंक (केवल शुरुआती फ्रेश लोड पर काम करेगा)
+  // 🚀 2. लाइव पेमेंट स्टेटस सिंक (केवल शुरुआती फ्रेश लोड पर बैकएंड से चेक करेगा)
   useEffect(() => {
     const checkLivePaymentStatus = async () => {
       if (user && user.email && !hasSynced && !user.isPaid) {
@@ -47,10 +44,9 @@ function App() {
           
           if (res.data && res.data.success) {
             const freshUserData = res.data.user;
-            if (freshUserData.isPaid) {
+            if (freshUserData && freshUserData.isPaid) {
               setUser(freshUserData);
               localStorage.setItem('partnerUser', JSON.stringify(freshUserData));
-              setCurrentView('dashboard'); // लाइव डेटाबेस में एक्टिव मिलते ही डैशबोर्ड खोलें
             }
           }
         } catch (error) {
@@ -62,7 +58,7 @@ function App() {
     };
 
     checkLivePaymentStatus();
-  }, [hasSynced]);
+  }, [hasSynced, user]);
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
@@ -89,32 +85,35 @@ function App() {
     window.location.href = "/";
   };
 
-  // 💡 जादूई हैंडलर: प्रोफाइल से पेमेंट सक्सेस होने पर यह तुरंत व्यू को बदल देगा
+  // 💡 प्रोफाइल से पेमेंट सक्सेस होने पर यह मास्टर हैंडलर तुरंत व्यू और स्टेट दोनों बदल देगा
   const handleUserUpdateFromProfile = (updatedUserData) => {
     console.log("[APP] प्रोफाइल से लाइव डेटा अपडेट मिला:", updatedUserData);
     setUser(updatedUserData);
     localStorage.setItem('partnerUser', JSON.stringify(updatedUserData));
     
-    if (updatedUserData.isPaid) {
-      setCurrentView('dashboard'); // 🚀 बिल्कुल सुरक्षित तरीके से सीधे डैशबोर्ड पर भेजें
+    if (updatedUserData && updatedUserData.isPaid) {
+      setCurrentView('dashboard'); // 🚀 सीधे और सुरक्षित तरीके से डैशबोर्ड पर भेजें
     }
   };
 
+  // 🎯 कंडीशन 1: पासवर्ड रीसेट स्क्रीन
   if (resetToken) {
     return <ResetPassword token={resetToken} onComplete={handleResetComplete} />;
   }
 
+  // 🎯 कंडीशन 2: सामान्य लॉगिन/डैशबोर्ड फ्लो
   return (
     <>
       {!user ? (
         <Login onLoginSuccess={handleLoginSuccess} />
-      ) : (currentView === 'profile') ? ( // 💡 अब रेंडरिंग का फैसला सिर्फ 'currentView' स्टेट करेगी, user.isPaid की असिंक्रोनस रेस कंडीशन यहाँ खत्म!
+      ) : (!user.isPaid || currentView === 'profile') ? ( 
+        // 🔒 अगर यूजर पेड नहीं है या प्रोफाइल व्यू पर है
         <Profile 
           user={user} 
-          setUser={handleUserUpdateFromProfile} 
+          setUser={handleUserUpdateFromProfile} // यहाँ नया हैंडलर बिल्कुल सही काम करेगा
           onBack={() => {
-            // अगर यूजर वाकई पेड हो चुका है, तो उसे जाने दें
-            if (user.isPaid || JSON.parse(localStorage.getItem('partnerUser'))?.isPaid) {
+            // बटन क्लिक पर लाइव ऑब्जेक्ट प्रॉपर्टी को चेक करें
+            if (user && user.isPaid) {
               setCurrentView('dashboard');
             } else {
               alert("🛑 ट्रेनिंग शुरू करने के लिए कृपया पहले फीस का भुगतान करें।");
@@ -122,6 +121,7 @@ function App() {
           }} 
         />
       ) : (
+        // 🟢 केवल पेड यूजर्स के लिए डैशबोर्ड
         <Dashboard 
           user={user} 
           setUser={setUser} 
