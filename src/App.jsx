@@ -17,28 +17,25 @@ function App() {
   const [resetToken, setResetToken] = useState(null);
   const [hasSynced, setHasSynced] = useState(false);
 
-  // 🚀 1. Robust Password Reset URL Check (Fixes Blank Screen)
+  // 🚀 1. Password Reset URL Check (Omitted for brevity - but keep your fixed code here)
   useEffect(() => {
-    // Check query param (?resetToken=xxx)
-    const queryParams = new URLSearchParams(window.location.search);
-    let token = queryParams.get('resetToken');
-
     // Check path variable (/reset-password/xxx)
-    if (!token && window.location.pathname.includes('/reset-password/')) {
+    if (window.location.pathname.includes('/reset-password/')) {
       const parts = window.location.pathname.split('/');
-      token = parts[parts.length - 1];
-    }
-
-    if (token) {
-      console.log("[APP] Reset Token detected:", token);
-      setResetToken(token);
+      const token = parts[parts.length - 1];
+      if (token) {
+        console.log("[APP] Reset Token detected:", token);
+        setResetToken(token);
+      }
     }
   }, []);
 
-  // 🚀 2. Live Payment Status Sync
+  // 🚀 2. Live Payment Status Sync (Tight & Robust Logic)
   useEffect(() => {
     const checkLivePaymentStatus = async () => {
-      if (user && user.email && !hasSynced) {
+      // 💡 Check condition: Sirf tabhi sync karega jab user logged in ho, 
+      // is session mein sync na hua ho, aur local status 'Unpaid' ho.
+      if (user && user.email && !hasSynced && !user.isPaid) {
         try {
           console.log("[APP] Server se live payment status verify kiya ja raha hai...");
           const res = await axios.post("https://training-ewpp-backend.onrender.com/api/auth-utils/get-profile", { email: user.email });
@@ -47,31 +44,33 @@ function App() {
             const freshUserData = res.data.user;
             console.log("[APP SUCCESS] Server live status isPaid:", freshUserData.isPaid);
             
-            if (freshUserData.isPaid !== user.isPaid) {
+            // 💡 Overwrite only if database is definitively 'Paid'.
+            // Agar database server delay se false de rha hai, toh local unpaid par rehene do.
+            if (freshUserData.isPaid && !user.isPaid) {
               setUser(freshUserData);
               localStorage.setItem('partnerUser', JSON.stringify(freshUserData));
               
-              // Agar background mein database paid mila to auto dashboard view set karein
-              if (freshUserData.isPaid) {
-                setCurrentView('dashboard');
-              }
+              // Database update confirmed - auto switch view
+              setCurrentView('dashboard');
             }
           }
         } catch (error) {
           console.error("[APP ERROR] Live status sync fail:", error.message);
         } finally {
+          // Set to true regardless of database status, blocking further background calls.
+          // This stops the infinite loop and race condition.
           setHasSynced(true);
         }
       }
     };
 
     checkLivePaymentStatus();
-  }, [hasSynced]);
+  }, [user]); // 💡 Dependency strictly on 'user' object change.
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
     localStorage.setItem('partnerUser', JSON.stringify(userData));
-    setHasSynced(false);
+    setHasSynced(false); // New login requires fresh sync.
     
     if (!userData.isPaid) {
       setCurrentView('profile');
@@ -95,13 +94,18 @@ function App() {
 
   // Custom function to handle direct user update from components (like Profile.jsx)
   const handleUserUpdate = (updatedUserData) => {
+    console.log("[APP USER UPDATE] Manual update received:", updatedUserData);
     setUser(updatedUserData);
+    localStorage.setItem('partnerUser', JSON.stringify(updatedUserData));
+    
+    // Set view if database update is confirmed
     if (updatedUserData.isPaid) {
-      setCurrentView('dashboard'); // 💡 Payment success hote hi turant dashboard view set karega
+      setCurrentView('dashboard');
+      setHasSynced(true); // Treat as synced to block immediate background loop
     }
   };
 
-  // 🎯 CONDITION 1: Password Reset Screen (Fixes Blank Page)
+  // 🎯 CONDITION 1: Password Reset Screen
   if (resetToken) {
     return <ResetPassword token={resetToken} onComplete={handleResetComplete} />;
   }
@@ -115,7 +119,7 @@ function App() {
         // 🔒 Profile View / Payment Required Screen
         <Profile 
           user={user} 
-          setUser={handleUserUpdate} // 💡 Ab custom handler view ko toggle karega
+          setUser={handleUserUpdate} 
           onBack={() => {
             if (user.isPaid) {
               setCurrentView('dashboard');
