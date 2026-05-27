@@ -72,11 +72,9 @@ export default function Sidebar() {
                       }}
                     >
                       <span>{isLocked ? '🔒' : (isCompleted ? '✅' : '▶️')}</span>
-             <span style={{          textDecoration: 'none', // 🟢 यहाँ से 'line-through' हटाकर हमेशा के लिए 'none' कर दिया          fontWeight: isActive ? '600' : (isCompleted ? '500' : 'normal'), // देखे गए वीडियो का फॉन्ट थोड़ा सा मीडियम (500) कर दिया ताकि लुक अच्छा आए
-             color: isCompleted ? '#475569' : (isActive ? '#0284c7' : '#1e293b') // देखे गए वीडियो का रंग थोड़ा शांत (muted) और एक्टिव का रंग थीम के हिसाब से ब्लू दिखेगा
-               }}>
-             {vid.title}
-               </span>
+                      <span style={{ textDecoration: isCompleted ? 'line-through' : 'none', fontWeight: isActive ? '600' : 'normal' }}>
+                        {vid.title}
+                      </span>
                     </div>
                   );
                 })}
