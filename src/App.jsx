@@ -62,7 +62,7 @@ function App() {
           }
         } catch (error) {
           console.error("[APP ERROR] लाइव स्टेटस सिंक फेल:", error.message);
-        } finaly {
+        } finally {
           setHasSynced(true);
         }
       }
