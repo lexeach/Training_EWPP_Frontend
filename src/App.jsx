@@ -5,6 +5,7 @@ import Dashboard from './views/Dashboard';
 import Profile from './views/Profile';
 import ResetPassword from './views/ResetPassword';
 import axios from 'axios';
+import AdminPanel from './views/AdminPanel'; // 💡 इम्पोर्ट करें
 
 function App() {
   // लोकलस्टोरेज से यूजर का शुरुआती सेशन निकालना
@@ -22,11 +23,21 @@ function App() {
   const [currentView, setCurrentView] = useState('dashboard'); 
   const [resetToken, setResetToken] = useState(null);
   const [hasSynced, setHasSynced] = useState(false);
+  
+  // 🎯 एडमिन मोड को ट्रैक करने के लिए एक नई स्टेट
+  const [isAdminRoute, setIsAdminRoute] = useState(false);
 
-  // 🚀 1. पासवर्ड रीसेट टोकन चेक
+  // 🚀 1. पासवर्ड रीसेट टोकन और /admin URL पाथ चेक
   useEffect(() => {
-    if (window.location.pathname.includes('/reset-password/')) {
-      const parts = window.location.pathname.split('/');
+    const currentPath = window.location.pathname;
+
+    // अगर ब्राउज़र के URL में /admin लिखा है तो सीधे एडमिन मोड ऑन करें
+    if (currentPath === '/admin' || currentPath === '/admin/') {
+      setIsAdminRoute(true);
+    }
+
+    if (currentPath.includes('/reset-password/')) {
+      const parts = currentPath.split('/');
       const token = parts[parts.length - 1];
       if (token) {
         setResetToken(token);
@@ -51,7 +62,7 @@ function App() {
           }
         } catch (error) {
           console.error("[APP ERROR] लाइव स्टेटस सिंक फेल:", error.message);
-        } finally {
+        } finaly {
           setHasSynced(true);
         }
       }
@@ -96,12 +107,23 @@ function App() {
     }
   };
 
+  // 🎯 एडमिन पैनल से "← वापस जाएँ" बटन दबाने पर हैंडलर
+  const handleAdminBack = () => {
+    setIsAdminRoute(false);
+    window.history.pushState({}, document.title, "/"); // URL बार को वापस साफ़ करके '/' कर देगा
+  };
+
   // 🎯 कंडीशन 1: पासवर्ड रीसेट स्क्रीन
   if (resetToken) {
     return <ResetPassword token={resetToken} onComplete={handleResetComplete} />;
   }
 
-  // 🎯 कंडीशन 2: सामान्य लॉगिन/डैशबोर्ड फ्लो
+  // 🎯 कंडीशन 2: अगर एडमिन ने ब्राउज़र में /admin टाइप किया है
+  if (isAdminRoute) {
+    return <AdminPanel onBack={handleAdminBack} />;
+  }
+
+  // 🎯 कंडीशन 3: सामान्य लॉगिन/डैशबोर्ड फ्लो
   return (
     <>
       {!user ? (
@@ -116,7 +138,7 @@ function App() {
             if (user && user.isPaid) {
               setCurrentView('dashboard');
             } else {
-              alert("🛑 ट्रेनिंग शुरू करने के लिए कृपया पहले फीस का भुगतान करें।");
+              alert("🛑 ट्रेनिंग शुरू करने के लिए कृपया पहले FEES का भुगतान करें।");
             }
           }} 
         />
