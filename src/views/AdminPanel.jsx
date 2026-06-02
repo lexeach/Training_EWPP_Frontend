@@ -13,7 +13,7 @@ export default function AdminPanel({ onBack }) {
   const [users, setUsers] = useState([]);
   const [fetchingUsers, setFetchingUsers] = useState(false);
 
-  const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
+  const BACKEND_URL = "https://training-ewpp-backend.onrender.com";
 
   // 🔄 डेटाबेस से सभी पार्टनर्स की लिस्ट लोड करने का फंक्शन
   // 🔄 डेटाबेस से सभी पार्टनर्स की सूची लोड करने का फंक्शन
