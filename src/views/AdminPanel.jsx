@@ -24,7 +24,8 @@ export default function AdminPanel({ onBack }) {
     setFetchingUsers(true);
     try {
       // सही एंडपॉइंट पाथ: /api/admin/users
-      const response = await axios.post(`${BACKEND_URL}/admin/users`, { secretKey: key });
+      //const response = await axios.post(`${BACKEND_URL}/admin/users`, { secretKey: key });
+      const response = await axios.post("https://training-ewpp-backend.onrender.com/api/admin/users", { secretKey: key });
       if (response.data.success) {
         setUsers(response.data.users);
       }
@@ -61,10 +62,10 @@ export default function AdminPanel({ onBack }) {
 
     try {
       // सही एंडपॉइंट पाथ: /api/admin/approve
-      const response = await axios.post(`${BACKEND_URL}/admin/approve`, {
-        email: targetEmail.trim(),
-        secretKey: secretKey
-      });
+ const response = await axios.post("https://training-ewpp-backend.onrender.com/api/admin/approve", {
+  email: targetEmail.trim(),
+  secretKey: secretKey
+  });
 
       if (response.data.success) {
         setIsError(false);
