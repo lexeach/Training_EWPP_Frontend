@@ -16,13 +16,15 @@ export default function AdminPanel({ onBack }) {
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
 
   // 🔄 डेटाबेस से सभी पार्टनर्स की लिस्ट लोड करने का फंक्शन
+  // 🔄 डेटाबेस से सभी पार्टनर्स की सूची लोड करने का फंक्शन
   const loadAllUsers = async (keyToUse) => {
     const key = keyToUse || secretKey;
     if (!key) return;
 
     setFetchingUsers(true);
     try {
-      const response = await axios.post(`${BACKEND_URL}/auth/admin/users`, { secretKey: key });
+      // सही एंडपॉइंट पाथ: /api/admin/users
+      const response = await axios.post(`${BACKEND_URL}/api/admin/users`, { secretKey: key });
       if (response.data.success) {
         setUsers(response.data.users);
       }
@@ -33,17 +35,19 @@ export default function AdminPanel({ onBack }) {
     }
   };
 
-  // जैसे ही एडमिन सही सीक्रेट की टाइप करेगा, लिस्ट अपने आप नीचे लोड हो जाएगी
+  // 🔄 जैसे ही सीक्रेट की की लंबाई आपके पासवर्ड (myAdminMegaSecret123) के बराबर पहुंचे, लिस्ट लोड हो जाए
   useEffect(() => {
     if (secretKey === "myAdminMegaSecret123") {
       loadAllUsers(secretKey);
     }
   }, [secretKey]);
 
-  // यूज़र को एक्टिवेट करने का मास्टर फंक्शन (चाहे सर्च बॉक्स से हो या सीधे टेबल बटन से)
+  // यूज़र को एक्टिवेट करने का मास्टर फंक्शन
   const handleActivate = async (e, customEmail) => {
     if (e) e.preventDefault();
-    const targetEmail = customEmail || email;
+    
+    // इनपुट वैल्यू को सीधे यहाँ से उठाएंगे ताकि स्टेट डिले की दिक्कत न हो
+    const targetEmail = customEmail || email; 
 
     if (!targetEmail || !secretKey) {
       setIsError(true);
@@ -56,8 +60,9 @@ export default function AdminPanel({ onBack }) {
     setIsError(false);
 
     try {
-      const response = await axios.post(`${BACKEND_URL}/auth/admin/approve`, {
-        email: targetEmail,
+      // सही एंडपॉइंट पाथ: /api/admin/approve
+      const response = await axios.post(`${BACKEND_URL}/api/admin/approve`, {
+        email: targetEmail.trim(),
         secretKey: secretKey
       });
 
@@ -65,7 +70,7 @@ export default function AdminPanel({ onBack }) {
         setIsError(false);
         setMessage(response.data.message);
         setEmail(''); // इनपुट बॉक्स साफ़ करें
-        loadAllUsers(secretKey); // 🔄 टेबल डेटा को तुरंत रिफ्रेश करें!
+        loadAllUsers(secretKey); // टेबल डेटा को तुरंत रिफ्रेश करें
       }
     } catch (error) {
       setIsError(true);
