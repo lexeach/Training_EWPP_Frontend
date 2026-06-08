@@ -14,7 +14,7 @@ export default function VideoPlayer() {
   const [isDriveVideoCompleted, setIsDriveVideoCompleted] = useState(false);
   const isGoogleDrive = currentVideo?.url?.includes('google.com') || currentVideo?.url?.includes('drive.google.com');
 
-  // अनुमानित समय सीमा (अगर डेटाबेस में वीडियो की अवधि न हो, तो ड्राइव वीडियो के लिए डिफ़ॉल्ट 10 से 30 सेकंड का टाइमर, आप इसे बढ़ा सकते हैं)
+  // अनुमानित समय सीमा (ड्राइव वीडियो के लिए डिफ़ॉल्ट 15 सेकंड का टाइमर)
   const DRIVE_REQUIRED_TIME = 15; 
 
   // 🔄 जैसे ही नया वीडियो लोड होगा (videoId बदलेगी), सभी ट्रैक्स और टाइमर रीसेट कर देंगे
@@ -80,11 +80,20 @@ export default function VideoPlayer() {
     
     if (result) {
       let flatVideos = [];
+      
+      // 🟢 नया 3-Tier फ्लैटनिंग लॉजिक: Modules ➔ Sub-Modules ➔ Videos
       modules.forEach(mod => {
-        // मास्टर लिस्ट बनाते समय sequenceOrder के अनुसार सॉर्ट करना सुरक्षित रहता है
-        const sortedVids = [...mod.videos].sort((a, b) => a.sequenceOrder - b.sequenceOrder);
-        flatVideos.push(...sortedVids);
+        if (mod.subModules && Array.isArray(mod.subModules)) {
+          mod.subModules.forEach(subMod => {
+            if (subMod.videos && Array.isArray(subMod.videos)) {
+              flatVideos.push(...subMod.videos);
+            }
+          });
+        }
       });
+      
+      // डेटा को sequenceOrder के आधार पर पूरी तरह अरेंज (Sort) करना ताकि क्रम न बिगड़े
+      flatVideos.sort((a, b) => a.sequenceOrder - b.sequenceOrder);
       
       const currentIndex = flatVideos.findIndex(v => v.videoId === currentVideo.videoId);
       
@@ -120,12 +129,14 @@ export default function VideoPlayer() {
     <div style={{ flex: 1, padding: '30px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f8fafc' }}>
       <div style={{ width: '100%', maxWidth: '850px', background: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
         
-        <h2 style={{ marginTop: 0, color: '#1e293b', fontSize: '22px', marginBottom: '15px' }}>{currentVideo.title}</h2>
+        <h2 style={{ marginTop: 0, color: '#1e293b', fontSize: '22px', marginBottom: '15px' }}>
+          {currentVideo.sequenceOrder ? `${currentVideo.sequenceOrder}. ` : ''}{currentVideo.title}
+        </h2>
         
         {/* 📺 स्मार्ट हाइब्रिड वीडियो प्लेयर कंटेनर */}
         <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: '6px', overflow: 'hidden', position: 'relative' }}>
           {isGoogleDrive ? (
-            /* 🟢 गूगल ड्राइव वीडियो के लिए कड़क आईफ्रेम (Iframe) प्लेयर */
+            /* 🟢 गूगल ड्राइव वीडियो के लिए आईफ्रेम (Iframe) प्लेयर */
             <iframe
               src={getEmbedUrl(currentVideo.url)}
               style={{ width: '100%', height: '100%', border: 'none' }}
@@ -134,7 +145,7 @@ export default function VideoPlayer() {
               title={currentVideo.title}
             ></iframe>
           ) : (
-            /* 🔵 सामान्य MP4 वीडियो के लिए आपका पुराना ओरिजिनल प्लेयर विद फुल नो-स्किप लॉजिक */
+            /* 🔵 सामान्य MP4 वीडियो के लिए नो-स्किप लॉजिक के साथ पुराना ओरिजिनल प्लेयर */
             <video
               ref={videoRef}
               key={currentVideo.videoId}
@@ -150,7 +161,7 @@ export default function VideoPlayer() {
           )}
         </div>
 
-        {/* 🎯 गूगल ड्राइव वीडियो के लिए प्रोग्रेस बटन जो समय पूरा होने से पहले अनलॉक नहीं होगा */}
+        {/* 🎯 गूगल ड्राइव वीडियो के लिए प्रोग्रेस बटन */}
         {isGoogleDrive && (
           <div style={{ marginTop: '20px', textAlign: 'center' }}>
             {!isDriveVideoCompleted ? (
