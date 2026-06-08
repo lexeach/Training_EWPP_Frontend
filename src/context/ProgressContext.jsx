@@ -14,31 +14,37 @@ export const ProgressProvider = ({ children, user, setUser }) => {
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
 
   // लाइव बैकएंड से सातों मॉड्यूल्स का डेटा फेच करना
-  useEffect(() => {
-    const fetchModules = async () => {
-      try {
-        const response = await axios.get(`${BACKEND_URL}/modules`);
-        setModules(response.data);
+  // frontend/src/context/ProgressContext.jsx
+useEffect(() => {
+  const fetchModules = async () => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}/modules`);
+      setModules(response.data);
+      
+      // 🟢 सुपर सेफ चेकिंग लॉजिक
+      if (response.data && response.data.length > 0) {
+        const firstModule = response.data[0];
         
-        // 3-tier आर्किटेक्चर (Module -> Sub-Module -> Video) के अनुसार डिफ़ॉल्ट पहला वीडियो सेट करना
-        if (
-          response.data.length > 0 && 
-          response.data[0].subModules && 
-          response.data[0].subModules.length > 0 && 
-          response.data[0].subModules[0].videos && 
-          response.data[0].subModules[0].videos.length > 0
-        ) {
-          setCurrentVideo(response.data[0].subModules[0].videos[0]);
+        if (firstModule.subModules && firstModule.subModules.length > 0) {
+          const firstSubModule = firstModule.subModules[0];
+          
+          if (firstSubModule.videos && firstSubModule.videos.length > 0) {
+            setCurrentVideo(firstSubModule.videos[0]);
+          }
+        } 
+        // 🟡 बैकअप: अगर बैकएंड अभी भी पुराना बिना सब-मॉड्यूल वाला डेटा भेज रहा हो
+        else if (firstModule.videos && firstModule.videos.length > 0) {
+          setCurrentVideo(firstModule.videos[0]);
         }
-        setLoading(false);
-      } catch (error) {
-        console.error("Modules fetch करने में एरर:", error);
-        setLoading(false);
       }
-    };
-    fetchModules();
-  }, []);
-
+      setLoading(false);
+    } catch (error) {
+      console.error("Modules fetch करने में एरर:", error);
+      setLoading(false);
+    }
+  };
+  fetchModules();
+}, []);
   // वीडियो ख़त्म होने पर बैकएंड पर प्रोग्रेस अपडेट करने का फंक्शन
   const updateProgressOnBackend = async (videoId) => {
     try {
