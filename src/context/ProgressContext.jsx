@@ -20,9 +20,15 @@ export const ProgressProvider = ({ children, user, setUser }) => {
         const response = await axios.get(`${BACKEND_URL}/modules`);
         setModules(response.data);
         
-        // डिफ़ॉल्ट रूप से पहला वीडियो सेट करें
-        if (response.data.length > 0 && response.data[0].videos.length > 0) {
-          setCurrentVideo(response.data[0].videos[0]);
+        // 3-tier आर्किटेक्चर (Module -> Sub-Module -> Video) के अनुसार डिफ़ॉल्ट पहला वीडियो सेट करना
+        if (
+          response.data.length > 0 && 
+          response.data[0].subModules && 
+          response.data[0].subModules.length > 0 && 
+          response.data[0].subModules[0].videos && 
+          response.data[0].subModules[0].videos.length > 0
+        ) {
+          setCurrentVideo(response.data[0].subModules[0].videos[0]);
         }
         setLoading(false);
       } catch (error) {
@@ -33,7 +39,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
     fetchModules();
   }, []);
 
-  // वीडियो ख़त्म होने पर बैकएंड पर प्रोग्रेस अपडेट करने का फंक्शन
+  // वीडियो ख़त्म होने पर बैकएंड पर प्रोग्रेस अपडेट करने का फंक्शन
   const updateProgressOnBackend = async (videoId) => {
     try {
       const config = {
