@@ -13,55 +13,28 @@ export const ProgressProvider = ({ children, user, setUser }) => {
 
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
 
-  useEffect(() => {
-    const fetchModules = async () => {
-      try {
-        console.log("📡 Fetching modules from:", `${BACKEND_URL}/modules`);
-        const response = await axios.get(`${BACKEND_URL}/modules`);
-        
-        // 🔴 DEBUG LOG 1: देखें कि बैकएंड असल में क्या डेटा भेज रहा है
-        console.log("📦 BACKEND RAW DATA RECV:", response.data);
-        
-        if (!response.data || !Array.isArray(response.data)) {
-          console.error("❌ Error: API did not return an array!");
-          setLoading(false);
-          return;
-        }
-
+  // frontend/src/context/ProgressContext.jsx (सिर्फ समस्या पकड़ने के लिए अस्थायी अपडेट)
+useEffect(() => {
+  const fetchModules = async () => {
+    try {
+      console.log("📡 Fetching modules from:", `${BACKEND_URL}/modules`);
+      const response = await axios.get(`${BACKEND_URL}/modules`);
+      
+      if (response.data && response.data.length > 0) {
         setModules(response.data);
         
-        // 🟢 सुपर सेफ चेकिंग लॉजिक
-        if (response.data.length > 0) {
-          const firstModule = response.data[0];
-          console.log("🔍 Checking First Module Structure:", firstModule);
-          
-          if (firstModule.subModules && firstModule.subModules.length > 0) {
-            console.log("🚀 Found 3-Tier Structure (Sub-modules)");
-            const firstSubModule = firstModule.subModules[0];
-            if (firstSubModule.videos && firstSubModule.videos.length > 0) {
-              setCurrentVideo(firstSubModule.videos[0]);
-              console.log("🎯 Current Video Set Successfully (3-tier):", firstSubModule.videos[0]);
-            }
-          } 
-          else if (firstModule.videos && firstModule.videos.length > 0) {
-            console.log("⚠️ Found Old 2-Tier Structure (Direct Videos)");
-            setCurrentVideo(firstModule.videos[0]);
-            console.log("🎯 Current Video Set Successfully (2-tier):", firstModule.videos[0]);
-          } else {
-            console.warn("❓ No videos found anywhere in the first module!");
-          }
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        // 🔴 DEBUG LOG 2: अगर API फेल हो रही है तो यहाँ दिखेगा
-        console.error("❌ Modules fetch करने में गंभीर एरर:", error);
-        setLoading(false);
+        // 🔴 केवल इस लाइन को ध्यान से देखें: यह पहले मॉड्यूल की सभी असली चाबियाँ (Keys) प्रिंट कर देगा
+        console.log("👉 REAL KEYS INSIDE DATABASE OBJECT:", Object.keys(response.data[0]));
+        console.log("👉 REAL CONTENT OF FIRST MODULE:", JSON.stringify(response.data[0], null, 2));
       }
-    };
-    fetchModules();
-  }, []);
-
+      setLoading(false);
+    } catch (error) {
+      console.error("Modules fetch करने में एरर:", error);
+      setLoading(false);
+    }
+  };
+  fetchModules();
+}, []);
   const updateProgressOnBackend = async (videoId) => {
     try {
       const config = {
