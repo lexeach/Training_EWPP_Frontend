@@ -28,9 +28,9 @@ export default function Sidebar() {
       {modules.map((mod) => {
         const isOpen = activeModuleId === mod.moduleId;
         return (
-          <div key={mod._id} style={{ marginBottom: '10px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+          <div key={mod._id || mod.moduleId} style={{ marginBottom: '10px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
             
-            {/* Accordion Header */}
+            {/* Accordion Header (Module level) */}
             <div 
               onClick={() => setActiveModuleId(isOpen ? null : mod.moduleId)}
               style={{
@@ -47,39 +47,62 @@ export default function Sidebar() {
               <span>{isOpen ? '▼' : '►'}</span>
             </div>
 
-            {/* Videos List */}
-            {isOpen && (
+            {/* Sub-Modules and Videos Containment Area */}
+            {isOpen && mod.subModules && (
               <div style={{ background: '#f8fafc', padding: '5px 0' }}>
-                {mod.videos.map((vid) => {
-                  const isLocked = checkIsLocked(vid);
-                  const isCompleted = completedVideos.includes(vid.videoId);
-                  const isActive = currentVideo?.videoId === vid.videoId;
-
-                  return (
-                    <div 
-                      key={vid._id}
-                      onClick={() => !isLocked && setCurrentVideo(vid)}
-                      style={{
-                        padding: '10px 15px',
-                        cursor: isLocked ? 'not-allowed' : 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        background: isActive ? '#e0f2fe' : 'transparent',
-                        color: isLocked ? '#94a3b8' : '#1e293b',
-                        fontSize: '14px',
-                        borderLeft: isActive ? '4px solid #0284c7' : '4px solid transparent'
-                      }}
-                    >
-                      <span>{isLocked ? '🔒' : (isCompleted ? '✅' : '▶️')}</span>
-             <span style={{          textDecoration: 'none', // 🟢 यहाँ से 'line-through' हटाकर हमेशा के लिए 'none' कर दिया          fontWeight: isActive ? '600' : (isCompleted ? '700' : 'normal'), // देखे गए वीडियो का फॉन्ट थोड़ा सा मीडियम (500) कर दिया ताकि लुक अच्छा आए
-             color: isCompleted ? '#475569' : (isActive ? '#0284c7' : '#1e293b') // देखे गए वीडियो का रंग थोड़ा शांत (muted) और एक्टिव का रंग थीम के हिसाब से ब्लू दिखेगा
-               }}>
-             {vid.title}
-               </span>
+                {mod.subModules.map((subMod) => (
+                  <div key={subMod._id || subMod.subModuleId} style={{ marginBottom: '12px' }}>
+                    
+                    {/* Sub-Module Title Section */}
+                    <div style={{ 
+                      padding: '6px 15px', 
+                      fontSize: '12px', 
+                      fontWeight: '700', 
+                      color: '#64748b', 
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      background: '#f1f5f9',
+                      margin: '4px 0'
+                    }}>
+                      {subMod.title}
                     </div>
-                  );
-                })}
+
+                    {/* Videos Loop Inside Sub-Module */}
+                    {subMod.videos && subMod.videos.map((vid) => {
+                      const isLocked = checkIsLocked(vid);
+                      const isCompleted = completedVideos.includes(vid.videoId);
+                      const isActive = currentVideo?.videoId === vid.videoId;
+
+                      return (
+                        <div 
+                          key={vid._id || vid.videoId}
+                          onClick={() => !isLocked && setCurrentVideo(vid)}
+                          style={{
+                            padding: '10px 15px',
+                            paddingLeft: '25px', // सब-मॉड्यूल के अंदर थोड़ा और गैप देने के लिए
+                            cursor: isLocked ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            background: isActive ? '#e0f2fe' : 'transparent',
+                            color: isLocked ? '#94a3b8' : '#1e293b',
+                            fontSize: '14px',
+                            borderLeft: isActive ? '4px solid #0284c7' : '4px solid transparent'
+                          }}
+                        >
+                          <span>{isLocked ? '🔒' : (isCompleted ? '✅' : '▶️')}</span>
+                          <span style={{ 
+                            textDecoration: 'none', 
+                            fontWeight: isActive ? '600' : (isCompleted ? '700' : 'normal'),
+                            color: isCompleted ? '#475569' : (isActive ? '#0284c7' : '#1e293b')
+                          }}>
+                            {vid.sequenceOrder ? `${vid.sequenceOrder}. ` : ''}{vid.title}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             )}
           </div>
