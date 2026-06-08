@@ -1,5 +1,6 @@
+// frontend/src/context/ProgressContext.jsx
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'react';
+import axios from 'axios'; // 🟢 फिक्स: सही इम्पोर्ट सेट कर दिया गया है
 
 export const ProgressContext = createContext();
 
@@ -8,7 +9,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
   const [currentVideo, setCurrentVideo] = useState(null);
   const [completedVideos, setCompletedVideos] = useState(user?.completedVideos || []);
   
-  // 🟢 फिक्स: डिफ़ॉल्ट वैल्यू को नए आर्किटेक्चर के पहले वीडियो की ID ("m1s1-v1") से सिंक किया
+  // डिफ़ॉल्ट वैल्यू नए आर्किटेक्चर के पहले वीडियो की ID ("m1s1-v1") से सिंक की
   const [currentUnlockedVideo, setCurrentUnlockedVideo] = useState(user?.currentUnlockedVideo || "m1s1-v1");
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +24,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
         if (response.data && response.data.length > 0) {
           setModules(response.data);
           
-          // 🟢 फिक्स: 3-Tier आर्किटेक्चर के अनुसार पहला वीडियो सुरक्षित तरीके से ढूंढना
+          // 3-Tier आर्किटेक्चर के अनुसार पहला वीडियो सुरक्षित तरीके से ढूंढना
           const firstModule = response.data[0];
           let firstVideo = null;
 
@@ -33,7 +34,6 @@ export const ProgressProvider = ({ children, user, setUser }) => {
               firstVideo = firstSubModule.videos[0];
             }
           } else if (firstModule.videos && firstModule.videos.length > 0) {
-            // पुराने आर्किटेक्चर के लिए सेफ फॉलबैक
             firstVideo = firstModule.videos[0];
           }
 
@@ -50,7 +50,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
       }
     };
     fetchModules();
-  }, [currentVideo]);
+  }, []); // 🟢 फिक्स: Dependency Array को खाली [] किया ताकि अनचाहा री-रेंडर लूप न बने
 
   const updateProgressOnBackend = async (videoId) => {
     try {
