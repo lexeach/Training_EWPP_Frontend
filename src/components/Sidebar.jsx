@@ -5,7 +5,6 @@ import { ProgressContext } from '../context/ProgressContext';
 export default function Sidebar() {
   const { modules, currentVideo, setCurrentVideo, completedVideos, currentUnlockedVideo } = useContext(ProgressContext);
   
-  // 🟢 स्टेट्स: एक मॉड्यूल के लिए और एक एक्टिव सब-मॉड्यूल ट्रैक करने के लिए
   const [activeModuleId, setActiveModuleId] = useState(1);
   const [activeSubModuleId, setActiveSubModuleId] = useState(null);
 
@@ -16,7 +15,7 @@ export default function Sidebar() {
     return true;
   };
 
-  // वीडियो आइटम रेंडर करने का हेल्पर फंक्शन
+  // 🔵 TIER 3: वीडियो आइटम रेंडर करने का हेल्पर फंक्शन (खूबसूरत कलर कोडिंग के साथ)
   const renderVideoItem = (vid) => {
     const isLocked = checkIsLocked(vid);
     const isCompleted = completedVideos.includes(vid.videoId);
@@ -27,23 +26,30 @@ export default function Sidebar() {
         key={vid._id || vid.videoId}
         onClick={() => !isLocked && setCurrentVideo(vid)}
         style={{
-          padding: '10px 15px',
-          paddingLeft: '35px', // 🟢 थोड़ी और स्पेसिंग ताकि वीडियो सब-मॉड्यूल के अंदर लगे
+          padding: '12px 15px',
+          paddingLeft: '40px', // अंदर की तरफ धकेला ताकि पदानुक्रम (Hierarchy) दिखे
           cursor: isLocked ? 'not-allowed' : 'pointer',
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
-          background: isActive ? '#e0f2fe' : 'transparent',
-          color: isLocked ? '#94a3b8' : '#1e293b',
-          fontSize: '14px',
+          gap: '12px',
+          // एक्टिव होने पर सॉफ्ट ब्लू, नॉर्मल होने पर क्लीन वाइट
+          background: isActive ? '#e0f2fe' : '#ffffff', 
+          color: isLocked ? '#94a3b8' : '#334155',
+          fontSize: '13.5px',
+          // एक्टिव होने पर बाईं तरफ एक मोटी ब्लू लाइन
           borderLeft: isActive ? '4px solid #0284c7' : '4px solid transparent',
+          borderBottom: '1px solid #f1f5f9',
           transition: 'all 0.2s ease'
         }}
       >
-        <span>{isLocked ? '🔒' : (isCompleted ? '✅' : '▶️')}</span>
+        <span style={{ fontSize: '15px' }}>
+          {isLocked ? '🔒' : (isCompleted ? '✅' : '▶️')}
+        </span>
         <span style={{ 
-          fontWeight: isActive ? '600' : (isCompleted ? '700' : 'normal'),
-          color: isCompleted ? '#475569' : (isActive ? '#0284c7' : '#1e293b')
+          fontWeight: isActive ? '600' : '500',
+          // कम्पलीटेड का शांत कलर, एक्टिव का चटक ब्लू, नॉर्मल का डार्क ग्रे
+          color: isCompleted ? '#64748b' : (isActive ? '#0284c7' : '#334155'),
+          textDecoration: isCompleted ? 'line-through' : 'none' // कम्पलीटेड पर हल्की लाइन (ऑप्शनल)
         }}>
           {vid.sequenceOrder ? `${vid.sequenceOrder}. ` : ''}{vid.title}
         </span>
@@ -52,68 +58,75 @@ export default function Sidebar() {
   };
 
   return (
-    <div style={{ width: '320px', background: '#fff', borderRight: '1px solid #e2e8f0', height: 'calc(100vh - 56px)', overflowY: 'auto', padding: '15px' }}>
-      <h3 style={{ marginTop: 0, color: '#0f172a', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px' }}>कोर्स मॉड्यूल्स</h3>
+    <div style={{ width: '320px', background: '#f8fafc', borderRight: '1px solid #e2e8f0', height: 'calc(100vh - 56px)', overflowY: 'auto', padding: '15px' }}>
+      <h3 style={{ marginTop: 0, color: '#0f172a', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', fontSize: '18px', fontWeight: '700' }}>
+        कोर्स मॉड्यूल्स
+      </h3>
       
       {modules && modules.map((mod) => {
         const isModuleOpen = activeModuleId === mod.moduleId;
         return (
-          <div key={mod._id || mod.moduleId} style={{ marginBottom: '10px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+          <div key={mod._id || mod.moduleId} style={{ marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
             
-            {/* 1. MODULE HEADER */}
+            {/* 🔴 TIER 1: MODULE HEADER (डार्क और प्रीमियम लुक) */}
             <div 
               onClick={() => {
                 setActiveModuleId(isModuleOpen ? null : mod.moduleId);
-                setActiveSubModuleId(null); // मॉड्यूल बदलने पर पुराना सब-मॉड्यूल बंद कर दें
+                setActiveSubModuleId(null);
               }}
               style={{
-                background: isModuleOpen ? '#f1f5f9' : '#fff',
-                padding: '12px',
+                background: isModuleOpen ? '#1e293b' : '#334155', // डार्क स्लेट कलर्स
+                padding: '14px 15px',
                 cursor: 'pointer',
                 fontWeight: '600',
                 display: 'flex',
                 justifyContent: 'space-between',
-                color: '#334155',
-                borderBottom: isModuleOpen ? '1px solid #e2e8f0' : 'none'
+                alignItems: 'center',
+                color: '#ffffff', // सफेद टेक्स्ट आँखों को सुकून देगा
+                transition: 'background 0.3s ease'
               }}
             >
-              <span>{mod.title}</span>
-              <span>{isModuleOpen ? '▼' : '►'}</span>
+              <span style={{ fontSize: '14.5px', letterSpacing: '0.02em' }}>{mod.title}</span>
+              <span style={{ fontSize: '12px', color: '#94a3b8' }}>{isModuleOpen ? '▼' : '►'}</span>
             </div>
 
-            {/* 2. SUB-MODULES LIST */}
+            {/* TIER 2 & 3 CONTAINER */}
             {isModuleOpen && (
               <div style={{ background: '#f8fafc' }}>
                 {mod.subModules && mod.subModules.length > 0 ? (
                   mod.subModules.map((subMod) => {
                     const isSubModuleOpen = activeSubModuleId === subMod.subModuleId;
                     return (
-                      <div key={subMod._id || subMod.subModuleId} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <div key={subMod._id || subMod.subModuleId} style={{ borderBottom: '1px solid #e2e8f0' }}>
                         
-                        {/* SUB-MODULE HEADER (क्लिक करने पर ही वीडियो खुलेंगे) */}
+                        {/* 🟢 TIER 2: SUB-MODULE HEADER (सॉफ्ट ग्रे-ब्लू मैटी लुक) */}
                         <div 
                           onClick={() => setActiveSubModuleId(isSubModuleOpen ? null : subMod.subModuleId)}
                           style={{ 
                             padding: '10px 15px', 
-                            fontSize: '12px', 
+                            paddingLeft: '22px',
+                            fontSize: '11.5px', 
                             fontWeight: '700', 
-                            color: isSubModuleOpen ? '#0284c7' : '#475569', 
+                            // एक्टिव होने पर टेक्स्ट ब्लू, वरना ग्रे-ब्लैक
+                            color: isSubModuleOpen ? '#0369a1' : '#475569', 
                             textTransform: 'uppercase', 
                             letterSpacing: '0.05em',
+                            // एक्टिव होने पर थोड़ा डार्क ग्रे, वरना एकदम लाइट ग्रे-ब्लू
                             background: isSubModuleOpen ? '#e2e8f0' : '#f1f5f9', 
                             cursor: 'pointer',
                             display: 'flex',
                             justifyContent: 'space-between',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            borderLeft: '4px solid #cbd5e1' // सब-मॉड्यूल की पहचान के लिए साइड बार
                           }}
                         >
                           <span>{subMod.title}</span>
-                          <span style={{ fontSize: '10px' }}>{isSubModuleOpen ? '▼' : '►'}</span>
+                          <span style={{ fontSize: '9px' }}>{isSubModuleOpen ? '▼' : '►'}</span>
                         </div>
 
-                        {/* 3. VIDEOS LIST (केवल तभी दिखेगी जब सब-मॉड्यूल एक्टिव होगा) */}
+                        {/* TIER 3: VIDEOS LIST */}
                         {isSubModuleOpen && subMod.videos && (
-                          <div style={{ background: '#fff', padding: '4px 0' }}>
+                          <div style={{ background: '#ffffff' }}>
                             {subMod.videos.map((vid) => renderVideoItem(vid))}
                           </div>
                         )}
@@ -121,7 +134,7 @@ export default function Sidebar() {
                     );
                   })
                 ) : (
-                  // फॉलबैक: अगर किसी मॉड्यूल में सब-मॉड्यूल न हो तो सीधे वीडियो दिखें
+                  // फॉलबैक
                   mod.videos && mod.videos.map((vid) => renderVideoItem(vid))
                 )}
               </div>
