@@ -17,7 +17,7 @@ export default function VideoPlayer() {
   // अनुमानित समय सीमा (ड्राइव वीडियो के लिए डिफ़ॉल्ट 15 सेकंड का टाइमर)
   const DRIVE_REQUIRED_TIME = 15; 
 
-  // 🔄 जैसे ही नया वीडियो लोड होगा (videoId बदलेगी), सभी ट्रैक्स और टाइमर रीसेट कर देंगे
+  // 🔄 जैसे ही नया वीडियो लोड होगा, सभी ट्रैक्स और टाइमर रीसेट कर देंगे
   useEffect(() => {
     setMaxTimeWatched(0);
     setSecondsWatched(0);
@@ -53,14 +53,18 @@ export default function VideoPlayer() {
     const video = videoRef.current;
     if (!video) return;
 
+    // अगर वीडियो सामान्य चल रहा है और सिर्फ 2 सेकंड से कम का गैप है, तो मैक्स टाइम बढ़ाते जाएं
     if (video.currentTime > maxTimeWatched) {
       if (video.currentTime - maxTimeWatched < 2) {
         setMaxTimeWatched(video.currentTime);
+      } else {
+        // 🛑 अगर किसी और तरीके से वीडियो अचानक आगे कूद गया (फॉरवर्डिंग), तो उसे वापस पटकें
+        video.currentTime = maxTimeWatched;
       }
     }
   };
 
-  // 2️⃣ जैसे ही यूजर प्रोग्रेस बार पर आगे (Fast-Forward) कूदने की कोशिश करेगा, यह उसे वापस पटकेगा
+  // 2️⃣ जैसे ही यूजर प्रोग्रेस बार पर आगे (Fast-Forward) कूदने की कोशिश करेगा, यह तुरंत ब्लॉक करेगा
   const handleSeeking = () => {
     const video = videoRef.current;
     if (!video) return;
@@ -81,18 +85,21 @@ export default function VideoPlayer() {
     if (result) {
       let flatVideos = [];
       
-      // 🟢 नया 3-Tier फ्लैटनिंग लॉजिक: Modules ➔ Sub-Modules ➔ Videos
+      // 🟢 फिक्स: 3-Tier फ्लैटनिंग लॉजिक - subModules को भी डीपली चेक करेगा
       modules.forEach(mod => {
-        if (mod.subModules && Array.isArray(mod.subModules)) {
+        if (mod.subModules && Array.isArray(mod.subModules) && mod.subModules.length > 0) {
           mod.subModules.forEach(subMod => {
             if (subMod.videos && Array.isArray(subMod.videos)) {
               flatVideos.push(...subMod.videos);
             }
           });
+        } else if (mod.videos && Array.isArray(mod.videos)) {
+          // पुराने/डायरेक्ट आर्किटेक्चर के लिए सेफ फॉलबैक
+          flatVideos.push(...mod.videos);
         }
       });
       
-      // डेटा को sequenceOrder के आधार पर पूरी तरह अरेंज (Sort) करना ताकि क्रम न बिगड़े
+      // डेटा को sequenceOrder के आधार पर पूरी तरह अरेंज (Sort) करना ताकि क्रम न बिगड़े
       flatVideos.sort((a, b) => a.sequenceOrder - b.sequenceOrder);
       
       const currentIndex = flatVideos.findIndex(v => v.videoId === currentVideo.videoId);
@@ -133,7 +140,7 @@ export default function VideoPlayer() {
           {currentVideo.sequenceOrder ? `${currentVideo.sequenceOrder}. ` : ''}{currentVideo.title}
         </h2>
         
-        {/* 📺 स्मार्ट हाइब्रिड वीडियो प्लेयर कंटेनर */}
+        {/* 📺 स्मार्ट हाइब्रिड video प्लेयर कंटेनर */}
         <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: '6px', overflow: 'hidden', position: 'relative' }}>
           {isGoogleDrive ? (
             /* 🟢 गूगल ड्राइव वीडियो के लिए आईफ्रेम (Iframe) प्लेयर */
@@ -145,7 +152,7 @@ export default function VideoPlayer() {
               title={currentVideo.title}
             ></iframe>
           ) : (
-            /* 🔵 सामान्य MP4 वीडियो के लिए नो-स्किप लॉजिक के साथ पुराना ओरिजिनल प्लेयर */
+            /* 🔵 सामान्य MP4 वीडियो के लिए नो-स्किप लॉजिक के साथ मजबूत प्लेयर */
             <video
               ref={videoRef}
               key={currentVideo.videoId}
