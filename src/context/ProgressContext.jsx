@@ -1,6 +1,5 @@
-// frontend/src/context/ProgressContext.jsx
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from 'react';
 
 export const ProgressContext = createContext();
 
@@ -8,33 +7,51 @@ export const ProgressProvider = ({ children, user, setUser }) => {
   const [modules, setModules] = useState([]);
   const [currentVideo, setCurrentVideo] = useState(null);
   const [completedVideos, setCompletedVideos] = useState(user?.completedVideos || []);
-  const [currentUnlockedVideo, setCurrentUnlockedVideo] = useState(user?.currentUnlockedVideo || "m1-v1");
+  
+  // 🟢 फिक्स: डिफ़ॉल्ट वैल्यू को नए आर्किटेक्चर के पहले वीडियो की ID ("m1s1-v1") से सिंक किया
+  const [currentUnlockedVideo, setCurrentUnlockedVideo] = useState(user?.currentUnlockedVideo || "m1s1-v1");
   const [loading, setLoading] = useState(true);
 
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
 
-  // frontend/src/context/ProgressContext.jsx (सिर्फ समस्या पकड़ने के लिए अस्थायी अपडेट)
-useEffect(() => {
-  const fetchModules = async () => {
-    try {
-      console.log("📡 Fetching modules from:", `${BACKEND_URL}/modules`);
-      const response = await axios.get(`${BACKEND_URL}/modules`);
-      
-      if (response.data && response.data.length > 0) {
-        setModules(response.data);
+  useEffect(() => {
+    const fetchModules = async () => {
+      try {
+        console.log("📡 Fetching modules from:", `${BACKEND_URL}/modules`);
+        const response = await axios.get(`${BACKEND_URL}/modules`);
         
-        // 🔴 केवल इस लाइन को ध्यान से देखें: यह पहले मॉड्यूल की सभी असली चाबियाँ (Keys) प्रिंट कर देगा
-        console.log("👉 REAL KEYS INSIDE DATABASE OBJECT:", Object.keys(response.data[0]));
-        console.log("👉 REAL CONTENT OF FIRST MODULE:", JSON.stringify(response.data[0], null, 2));
+        if (response.data && response.data.length > 0) {
+          setModules(response.data);
+          
+          // 🟢 फिक्स: 3-Tier आर्किटेक्चर के अनुसार पहला वीडियो सुरक्षित तरीके से ढूंढना
+          const firstModule = response.data[0];
+          let firstVideo = null;
+
+          if (firstModule.subModules && firstModule.subModules.length > 0) {
+            const firstSubModule = firstModule.subModules[0];
+            if (firstSubModule.videos && firstSubModule.videos.length > 0) {
+              firstVideo = firstSubModule.videos[0];
+            }
+          } else if (firstModule.videos && firstModule.videos.length > 0) {
+            // पुराने आर्किटेक्चर के लिए सेफ फॉलबैक
+            firstVideo = firstModule.videos[0];
+          }
+
+          // अगर यूजर ने अभी तक कोई वीडियो सेलेक्ट नहीं किया है, तो पहला वीडियो ऑटो-लोड करें
+          if (!currentVideo && firstVideo) {
+            setCurrentVideo(firstVideo);
+            console.log("🎯 Auto-loaded first video:", firstVideo.title);
+          }
+        }
+        setLoading(false);
+      } catch (error) {
+        console.error("Modules fetch करने में एरर:", error);
+        setLoading(false);
       }
-      setLoading(false);
-    } catch (error) {
-      console.error("Modules fetch करने में एरर:", error);
-      setLoading(false);
-    }
-  };
-  fetchModules();
-}, []);
+    };
+    fetchModules();
+  }, [currentVideo]);
+
   const updateProgressOnBackend = async (videoId) => {
     try {
       const config = {
