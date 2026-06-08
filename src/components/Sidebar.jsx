@@ -112,7 +112,7 @@ export default function Sidebar() {
                             textTransform: 'uppercase', 
                             letterSpacing: '0.04em',
                             // एक्टिव होने पर हल्का डार्क ग्रे, वरना एकदम सॉफ्ट लाइट ग्रे
-                            background: isSubModuleOpen ? '#e2e8f0' : '#f1f5f9', 
+                            background: isSubModuleOpen ? '#e2e8f0' : '#87ceeb', 
                             cursor: 'pointer',
                             display: 'flex',
                             justifyContent: 'space-between',
