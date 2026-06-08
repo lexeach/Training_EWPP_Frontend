@@ -5,7 +5,7 @@ import { ProgressContext } from '../context/ProgressContext';
 export default function Sidebar() {
   const { modules, currentVideo, setCurrentVideo, completedVideos, currentUnlockedVideo } = useContext(ProgressContext);
   
-  // डिफ़ॉल्ट रूप से पहला मॉड्यूल खुला रखने के लिए 1 सेट किया है
+  // यूजर के अनुभव के लिए डिफ़ॉल्ट रूप से पहला मॉड्यूल खुला रखें
   const [activeModuleId, setActiveModuleId] = useState(1);
   const [activeSubModuleId, setActiveSubModuleId] = useState(null);
 
@@ -16,7 +16,7 @@ export default function Sidebar() {
     return true;
   };
 
-  // 🔵 TIER 3: वीडियो आइटम का डिज़ाइन (Eye-Comfortable & Clean)
+  // 🔵 TIER 3: वीडियो आइटम का आरामदायक और प्रोफेशनल डिज़ाइन
   const renderVideoItem = (vid) => {
     const isLocked = checkIsLocked(vid);
     const isCompleted = completedVideos.includes(vid.videoId);
@@ -28,16 +28,16 @@ export default function Sidebar() {
         onClick={() => !isLocked && setCurrentVideo(vid)}
         style={{
           padding: '12px 15px',
-          paddingLeft: '42px', // थोड़ा और आगे धकेला ताकि पदानुक्रम (Hierarchy) साफ़ दिखे
+          paddingLeft: '42px', // अंदर की तरफ धकेला ताकि Hierarchy साफ दिखे
           cursor: isLocked ? 'not-allowed' : 'pointer',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          // एक्टिव होने पर सॉफ्ट स्काई-ब्लू बैकग्राउंड, वरना वाइट
+          // एक्टिव होने पर स्काई-ब्लू हाइलाइट, वरना क्लीन वाइट
           background: isActive ? '#e0f2fe' : '#ffffff', 
           color: isLocked ? '#94a3b8' : '#334155',
           fontSize: '13.5px',
-          // एक्टिव वीडियो के लेफ्ट साइड में सुंदर ब्लू पट्टी
+          // एक्टिव वीडियो के लेफ्ट साइड में सुंदर इंडिकेटर पट्टी
           borderLeft: isActive ? '4px solid #0284c7' : '4px solid transparent',
           borderBottom: '1px solid #f1f5f9',
           transition: 'all 0.2s ease'
@@ -68,11 +68,11 @@ export default function Sidebar() {
         return (
           <div key={mod._id || mod.moduleId} style={{ marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
             
-            {/* 🔴 TIER 1: MODULE HEADER (डार्क प्रीमियम लुक ताकि मुख्य सेक्शन अलग चमके) */}
+            {/* 🔴 TIER 1: MODULE HEADER (डार्क और बोल्ड प्रीमियम लुक) */}
             <div 
               onClick={() => {
                 setActiveModuleId(isModuleOpen ? null : mod.moduleId);
-                setActiveSubModuleId(null); // मॉड्यूल बदलते ही पुराने सब-मॉड्यूल को क्लोज करें
+                setActiveSubModuleId(null); // मॉड्यूल चेंज होते ही पुराने सब-मॉड्यूल को बंद करें
               }}
               style={{
                 background: isModuleOpen ? '#1e293b' : '#334155', // खुला होने पर गहरा स्लेट, बंद होने पर थोड़ा हल्का स्लेट
@@ -82,7 +82,7 @@ export default function Sidebar() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                color: '#ffffff', // व्हाइट टेक्स्ट से आँखों पर ज़ोर नहीं पड़ेगा
+                color: '#ffffff', // व्हाइट टेक्स्ट से आँखों को बहुत आराम मिलता है
                 transition: 'background 0.2s ease'
               }}
             >
@@ -111,13 +111,13 @@ export default function Sidebar() {
                             color: isSubModuleOpen ? '#0369a1' : '#475569', 
                             textTransform: 'uppercase', 
                             letterSpacing: '0.04em',
-                            // एक्टिव होने पर थोड़ा सा गहरा ग्रे, वरना एकदम सॉफ्ट लाइट ग्रे
+                            // एक्टिव होने पर हल्का डार्क ग्रे, वरना एकदम सॉफ्ट लाइट ग्रे
                             background: isSubModuleOpen ? '#e2e8f0' : '#f1f5f9', 
                             cursor: 'pointer',
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            borderLeft: '4px solid #cbd5e1' // सब-मॉड्यूल के लिए एक सटल इंडिकेटर पट्टी
+                            borderLeft: '4px solid #cbd5e1' // सब-मॉड्यूल की पहचान के लिए साइड में हल्की ग्रे पट्टी
                           }}
                         >
                           <span>{subMod.title}</span>
@@ -134,7 +134,7 @@ export default function Sidebar() {
                     );
                   })
                 ) : (
-                  // सेफ फॉलबैक: अगर किसी मॉड्यूल में सब-मॉड्यूल न हो
+                  // सेफ फॉलबैक: अगर किसी मॉड्यूल में डायरेक्ट वीडियो हो
                   mod.videos && (
                     <div style={{ background: '#ffffff' }}>
                       {mod.videos.map((vid) => renderVideoItem(vid))}
