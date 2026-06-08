@@ -1,4 +1,3 @@
-// frontend/src/components/Sidebar.jsx
 import React, { useState, useContext } from 'react';
 import { ProgressContext } from '../context/ProgressContext';
 
@@ -7,7 +6,8 @@ export default function Sidebar() {
   const [activeModuleId, setActiveModuleId] = useState(1);
 
   const checkIsLocked = (video) => {
-    if (video.videoId === "m1-v1") return false;
+    // 🟢 फिक्स: पहले वीडियो की नई ID "m1s1-v1" को अनलॉक करने की बेस कंडीशन बनाई
+    if (video.videoId === "m1s1-v1") return false;
     if (completedVideos.includes(video.videoId)) return false;
     if (currentUnlockedVideo === video.videoId) return false;
     return true;
@@ -79,8 +79,8 @@ export default function Sidebar() {
                     <div key={subMod._id || subMod.subModuleId} style={{ marginBottom: '12px' }}>
                       <div style={{ 
                         padding: '6px 15px', fontSize: '12px', fontWeight: '700', 
-                        color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em',
-                        background: '#f1f5f9', margin: '4px 0'
+                        color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em',
+                        background: '#e2e8f0', margin: '4px 0'
                       }}>
                         {subMod.title}
                       </div>
