@@ -5,6 +5,7 @@ import { ProgressContext } from '../context/ProgressContext';
 export default function Sidebar() {
   const { modules, currentVideo, setCurrentVideo, completedVideos, currentUnlockedVideo } = useContext(ProgressContext);
   
+  // डिफ़ॉल्ट रूप से पहला मॉड्यूल खुला रखने के लिए 1 सेट किया है
   const [activeModuleId, setActiveModuleId] = useState(1);
   const [activeSubModuleId, setActiveSubModuleId] = useState(null);
 
@@ -15,7 +16,7 @@ export default function Sidebar() {
     return true;
   };
 
-  // 🔵 TIER 3: वीडियो आइटम रेंडर करने का हेल्पर फंक्शन (खूबसूरत कलर कोडिंग के साथ)
+  // 🔵 TIER 3: वीडियो आइटम का डिज़ाइन (Eye-Comfortable & Clean)
   const renderVideoItem = (vid) => {
     const isLocked = checkIsLocked(vid);
     const isCompleted = completedVideos.includes(vid.videoId);
@@ -27,29 +28,28 @@ export default function Sidebar() {
         onClick={() => !isLocked && setCurrentVideo(vid)}
         style={{
           padding: '12px 15px',
-          paddingLeft: '40px', // अंदर की तरफ धकेला ताकि पदानुक्रम (Hierarchy) दिखे
+          paddingLeft: '42px', // थोड़ा और आगे धकेला ताकि पदानुक्रम (Hierarchy) साफ़ दिखे
           cursor: isLocked ? 'not-allowed' : 'pointer',
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          // एक्टिव होने पर सॉफ्ट ब्लू, नॉर्मल होने पर क्लीन वाइट
+          // एक्टिव होने पर सॉफ्ट स्काई-ब्लू बैकग्राउंड, वरना वाइट
           background: isActive ? '#e0f2fe' : '#ffffff', 
           color: isLocked ? '#94a3b8' : '#334155',
           fontSize: '13.5px',
-          // एक्टिव होने पर बाईं तरफ एक मोटी ब्लू लाइन
+          // एक्टिव वीडियो के लेफ्ट साइड में सुंदर ब्लू पट्टी
           borderLeft: isActive ? '4px solid #0284c7' : '4px solid transparent',
           borderBottom: '1px solid #f1f5f9',
           transition: 'all 0.2s ease'
         }}
       >
-        <span style={{ fontSize: '15px' }}>
+        <span style={{ fontSize: '14px', display: 'flex', alignItems: 'center' }}>
           {isLocked ? '🔒' : (isCompleted ? '✅' : '▶️')}
         </span>
         <span style={{ 
           fontWeight: isActive ? '600' : '500',
-          // कम्पलीटेड का शांत कलर, एक्टिव का चटक ब्लू, नॉर्मल का डार्क ग्रे
-          color: isCompleted ? '#64748b' : (isActive ? '#0284c7' : '#334155'),
-          textDecoration: isCompleted ? 'line-through' : 'none' // कम्पलीटेड पर हल्की लाइन (ऑप्शनल)
+          color: isCompleted ? '#64748b' : (isActive ? '#0284c7' : '#1e293b'),
+          lineHeight: '1.4'
         }}>
           {vid.sequenceOrder ? `${vid.sequenceOrder}. ` : ''}{vid.title}
         </span>
@@ -66,31 +66,31 @@ export default function Sidebar() {
       {modules && modules.map((mod) => {
         const isModuleOpen = activeModuleId === mod.moduleId;
         return (
-          <div key={mod._id || mod.moduleId} style={{ marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+          <div key={mod._id || mod.moduleId} style={{ marginBottom: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
             
-            {/* 🔴 TIER 1: MODULE HEADER (डार्क और प्रीमियम लुक) */}
+            {/* 🔴 TIER 1: MODULE HEADER (डार्क प्रीमियम लुक ताकि मुख्य सेक्शन अलग चमके) */}
             <div 
               onClick={() => {
                 setActiveModuleId(isModuleOpen ? null : mod.moduleId);
-                setActiveSubModuleId(null);
+                setActiveSubModuleId(null); // मॉड्यूल बदलते ही पुराने सब-मॉड्यूल को क्लोज करें
               }}
               style={{
-                background: isModuleOpen ? '#1e293b' : '#334155', // डार्क स्लेट कलर्स
+                background: isModuleOpen ? '#1e293b' : '#334155', // खुला होने पर गहरा स्लेट, बंद होने पर थोड़ा हल्का स्लेट
                 padding: '14px 15px',
                 cursor: 'pointer',
                 fontWeight: '600',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                color: '#ffffff', // सफेद टेक्स्ट आँखों को सुकून देगा
-                transition: 'background 0.3s ease'
+                color: '#ffffff', // व्हाइट टेक्स्ट से आँखों पर ज़ोर नहीं पड़ेगा
+                transition: 'background 0.2s ease'
               }}
             >
-              <span style={{ fontSize: '14.5px', letterSpacing: '0.02em' }}>{mod.title}</span>
-              <span style={{ fontSize: '12px', color: '#94a3b8' }}>{isModuleOpen ? '▼' : '►'}</span>
+              <span style={{ fontSize: '14.5px', letterSpacing: '0.01em' }}>{mod.title}</span>
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>{isModuleOpen ? '▼' : '►'}</span>
             </div>
 
-            {/* TIER 2 & 3 CONTAINER */}
+            {/* SUB-MODULES CONTAINER */}
             {isModuleOpen && (
               <div style={{ background: '#f8fafc' }}>
                 {mod.subModules && mod.subModules.length > 0 ? (
@@ -99,32 +99,32 @@ export default function Sidebar() {
                     return (
                       <div key={subMod._id || subMod.subModuleId} style={{ borderBottom: '1px solid #e2e8f0' }}>
                         
-                        {/* 🟢 TIER 2: SUB-MODULE HEADER (सॉफ्ट ग्रे-ब्लू मैटी लुक) */}
+                        {/* 🟢 TIER 2: SUB-MODULE HEADER (सॉफ्ट मैटी लाइट-ग्रे शेड) */}
                         <div 
                           onClick={() => setActiveSubModuleId(isSubModuleOpen ? null : subMod.subModuleId)}
                           style={{ 
-                            padding: '10px 15px', 
-                            paddingLeft: '22px',
+                            padding: '11px 15px', 
+                            paddingLeft: '24px',
                             fontSize: '11.5px', 
                             fontWeight: '700', 
-                            // एक्टिव होने पर टेक्स्ट ब्लू, वरना ग्रे-ब्लैक
+                            // एक्टिव सब-मॉड्यूल का टेक्स्ट डीप ब्लू, नॉर्मल का डार्क म्यूटेड ग्रे
                             color: isSubModuleOpen ? '#0369a1' : '#475569', 
                             textTransform: 'uppercase', 
-                            letterSpacing: '0.05em',
-                            // एक्टिव होने पर थोड़ा डार्क ग्रे, वरना एकदम लाइट ग्रे-ब्लू
+                            letterSpacing: '0.04em',
+                            // एक्टिव होने पर थोड़ा सा गहरा ग्रे, वरना एकदम सॉफ्ट लाइट ग्रे
                             background: isSubModuleOpen ? '#e2e8f0' : '#f1f5f9', 
                             cursor: 'pointer',
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            borderLeft: '4px solid #cbd5e1' // सब-मॉड्यूल की पहचान के लिए साइड बार
+                            borderLeft: '4px solid #cbd5e1' // सब-मॉड्यूल के लिए एक सटल इंडिकेटर पट्टी
                           }}
                         >
                           <span>{subMod.title}</span>
                           <span style={{ fontSize: '9px' }}>{isSubModuleOpen ? '▼' : '►'}</span>
                         </div>
 
-                        {/* TIER 3: VIDEOS LIST */}
+                        {/* TIER 3: VIDEOS LIST (केवल क्लिक करने पर खुलेगी) */}
                         {isSubModuleOpen && subMod.videos && (
                           <div style={{ background: '#ffffff' }}>
                             {subMod.videos.map((vid) => renderVideoItem(vid))}
@@ -134,8 +134,12 @@ export default function Sidebar() {
                     );
                   })
                 ) : (
-                  // फॉलबैक
-                  mod.videos && mod.videos.map((vid) => renderVideoItem(vid))
+                  // सेफ फॉलबैक: अगर किसी मॉड्यूल में सब-मॉड्यूल न हो
+                  mod.videos && (
+                    <div style={{ background: '#ffffff' }}>
+                      {mod.videos.map((vid) => renderVideoItem(vid))}
+                    </div>
+                  )
                 )}
               </div>
             )}
