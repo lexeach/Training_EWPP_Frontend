@@ -5,7 +5,8 @@ import Dashboard from './views/Dashboard';
 import Profile from './views/Profile';
 import ResetPassword from './views/ResetPassword';
 import axios from 'axios';
-import AdminPanel from './views/AdminPanel'; // 💡 इम्पोर्ट करें
+import AdminPanel from './views/AdminPanel'; 
+import TestListPage from './pages/TestListPage'; // 🟢 नया टेस्ट लिस्ट पेज इम्पोर्ट किया
 
 function App() {
   // लोकलस्टोरेज से यूजर का शुरुआती सेशन निकालना
@@ -19,7 +20,7 @@ function App() {
     }
   });
 
-  // 💡 सुपर सेफ सुधार: शुरुआत में इसे हमेशा 'dashboard' रखें, क्रैश होने का चांस ही खत्म!
+  // 💡 शुरुआत में इसे हमेशा 'dashboard' रखें
   const [currentView, setCurrentView] = useState('dashboard'); 
   const [resetToken, setResetToken] = useState(null);
   const [hasSynced, setHasSynced] = useState(false);
@@ -118,12 +119,12 @@ function App() {
     return <ResetPassword token={resetToken} onComplete={handleResetComplete} />;
   }
 
-  // 🎯 कंडीशन 2: अगर एडमिन ने ब्राउज़र में /admin टाइप किया है
+  // 🎯 CONDITION 2: अगर एडमिन ने ब्राउज़र में /admin टाइप किया है
   if (isAdminRoute) {
     return <AdminPanel onBack={handleAdminBack} />;
   }
 
-  // 🎯 कंडीशन 3: सामान्य लॉगिन/डैशबोर्ड फ्लो
+  // 🎯 CONDITION 3: सामान्य लॉगिन/डैशबोर्ड फ्लो
   return (
     <>
       {!user ? (
@@ -132,9 +133,8 @@ function App() {
         // 🔒 अगर यूजर पेड नहीं है या प्रोफाइल व्यू पर है
         <Profile 
           user={user} 
-          setUser={handleUserUpdateFromProfile} // यहाँ नया हैंडलर बिल्कुल सही काम करेगा
+          setUser={handleUserUpdateFromProfile} 
           onBack={() => {
-            // बटन क्लिक पर लाइव ऑब्जेक्ट प्रॉपर्टी को चेक करें
             if (user && user.isPaid) {
               setCurrentView('dashboard');
             } else {
@@ -142,13 +142,20 @@ function App() {
             }
           }} 
         />
+      ) : currentView === 'tests' ? (
+        // 📝 🎯 नई कंडीशन: अगर यूजर ने 'ऑनलाइन टेस्ट लिस्ट' बटन पर क्लिक किया है
+        <TestListPage 
+          user={user} 
+          onBack={() => setCurrentView('dashboard')} // वापस डैशबोर्ड व्यू पर जाने के लिए
+        />
       ) : (
-        // 🟢 केवल पेड यूजर्स के लिए डैशबोर्ड
+        // 🟢 केवल पेड यूजर्स के लिए मुख्य डैशबोर्ड व्यू
         <Dashboard 
           user={user} 
           setUser={setUser} 
           onLogout={handleLogout} 
           onProfileClick={() => setCurrentView('profile')} 
+          onTestListClick={() => setCurrentView('tests')} // 👈 हेडर के नए बटन को कंट्रोल करने के लिए पास किया
         />
       )}
     </>
