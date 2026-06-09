@@ -5,7 +5,8 @@ import Sidebar from '../components/Sidebar';
 import VideoPlayer from '../components/VideoPlayer';
 import { ProgressProvider } from '../context/ProgressContext';
 
-export default function Dashboard({ user, setUser, onLogout }) {
+// 🎯 सुधार 1: पैरेंट (App.jsx) से आ रहे 'onProfileClick' और 'onTestListClick' को यहाँ रिसीव किया
+export default function Dashboard({ user, setUser, onLogout, onProfileClick, onTestListClick }) {
   // 🔄 स्टेट ट्रैक करने के लिए कि यूजर अभी 'training' मोड में है या अपना 'stats' (परफॉर्मेंस डैशबोर्ड) देख रहा है
   const [currentView, setCurrentView] = useState('training');
 
@@ -16,14 +17,14 @@ export default function Dashboard({ user, setUser, onLogout }) {
     <ProgressProvider user={user} setUser={setUser}>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', fontFamily: 'system-ui, sans-serif' }}>
         
-        {/* 1. TOP BAR (प्रोफाइल क्लिक पर व्यू चेंज करेंगे, और लॉगआउट पर वापस ट्रेनिंग सेट करेंगे) */}
+        {/* 1. TOP BAR */}
         <Header 
-        user={user} 
-        onLogout={onLogout} 
-        onProfileClick={onProfileClick} 
-        onTestListClick={onTestListClick} // 👈 यह यहाँ जोड़ें
-          onHomeClick={() => setCurrentView('dashboard')} // 👈 यह जोड़ने से लोगो पर क्लिक करते ही डैशबोर्ड खुल जाएगा
-      />
+          user={user} 
+          onLogout={onLogout} 
+          onProfileClick={onProfileClick} // 🟢 अब यह पूरी तरह डिफाइंड है और क्रैश नहीं करेगा
+          onTestListClick={onTestListClick} // 🟢 पैरेंट से आया हुआ हैंडलर यहाँ सुरक्षित पास कर दिया
+          onHomeClick={() => setCurrentView('training')} // 🎯 सुधार 2: लोगो पर क्लिक करने पर व्यू वापस 'training' (वीडियो प्लेयर) सेट होगा
+        />
         
         {/* MAIN BODY CONTAINER */}
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
@@ -56,7 +57,7 @@ export default function Dashboard({ user, setUser, onLogout }) {
                 {results.length === 0 ? (
                   <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
                     <span style={{ fontSize: '40px' }}>📝</span>
-                    <p style={{ marginTop: '10px', fontWeight: '500' }}>आपने अभी तक कोई ऑनलाइन असेसमेंट टेस्ट नहीं दिया है।</p>
+                    <p style={{ marginTop: '10px', fontWeight: '500' }}>आपने अभी तक कोई ऑनलाइन असेसमेंट test नहीं दिया है।</p>
                     <p style={{ fontSize: '13px', color: '#94a3b8' }}>वीडियो पूरा देखने के बाद आपका टेस्ट ऑटोमैटिक शुरू हो जाएगा।</p>
                   </div>
                 ) : (
