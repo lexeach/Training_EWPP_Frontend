@@ -18,10 +18,11 @@ export default function Dashboard({ user, setUser, onLogout }) {
         
         {/* 1. TOP BAR (प्रोफाइल क्लिक पर व्यू चेंज करेंगे, और लॉगआउट पर वापस ट्रेनिंग सेट करेंगे) */}
         <Header 
-          user={user} 
-          onLogout={onLogout} 
-          onProfileClick={() => setCurrentView(currentView === 'stats' ? 'training' : 'stats')} 
-        />
+        user={user} 
+        onLogout={onLogout} 
+        onProfileClick={onProfileClick} 
+        onTestListClick={onTestListClick} // 👈 यह यहाँ जोड़ें
+      />
         
         {/* MAIN BODY CONTAINER */}
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
