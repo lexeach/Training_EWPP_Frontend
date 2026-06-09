@@ -6,7 +6,7 @@ import Profile from './views/Profile';
 import ResetPassword from './views/ResetPassword';
 import axios from 'axios';
 import AdminPanel from './views/AdminPanel'; 
-import TestListPage from './views/TestListPage'; // 🟢 नया टेस्ट लिस्ट पेज इम्पोर्ट किया
+import TestListPage from './views/TestListPage'; // 🟢 टेस्ट लिस्ट पेज इम्पोर्टेड
 
 function App() {
   // लोकलस्टोरेज से यूजर का शुरुआती सेशन निकालना
@@ -143,10 +143,10 @@ function App() {
           }} 
         />
       ) : currentView === 'tests' ? (
-        // 📝 🎯 नई कंडीशन: अगर यूजर ने 'ऑनलाइन टेस्ट लिस्ट' बटन पर क्लिक किया है
+        // 📝 🎯 ऑनलाइन टेस्ट लिस्ट व्यू रेंडरिंग (जब स्टेट 'tests' हो)
         <TestListPage 
           user={user} 
-          onBack={() => setCurrentView('dashboard')} // वापस डैशबोर्ड व्यू पर जाने के लिए
+          onBack={() => setCurrentView('dashboard')} // वापस मुख्य डैशबोर्ड पर आने के लिए
         />
       ) : (
         // 🟢 केवल पेड यूजर्स के लिए मुख्य डैशबोर्ड व्यू
@@ -154,8 +154,8 @@ function App() {
           user={user} 
           setUser={setUser} 
           onLogout={handleLogout} 
-          onProfileClick={() => setCurrentView('profile')} 
-          onTestListClick={() => setCurrentView('tests')} // 👈 हेडर के नए बटन को कंट्रोल करने के लिए पास किया
+          onProfileClick={() => setCurrentView('profile')} // Dashboard.jsx को सही ढंग से पास किया गया
+          onTestListClick={() => setCurrentView('tests')} // Dashboard.jsx को सही ढंग से पास किया गया
         />
       )}
     </>
