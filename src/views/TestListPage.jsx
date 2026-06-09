@@ -79,7 +79,11 @@ export default function TestListPage({ user, onBack }) {
                 
                 // सुरक्षित तरीके से टेस्ट का रिजल्ट ढूंढना
                 const userResults = Array.isArray(user?.quizResults) ? user.quizResults : [];
-                const testResult = userResults.find(r => r && r.videoId === video.videoId && r.passed === true);
+                const testResult = userResults.find(r => {
+         return r && 
+         String(r.videoId).trim() === String(video.videoId).trim() && 
+         (r.passed === true || r.passed === 'true');
+         });
 
                 return (
                   <tr key={video.videoId} style={{ borderBottom: '1px solid #e2e8f0' }}>
