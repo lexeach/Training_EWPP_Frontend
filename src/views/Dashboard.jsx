@@ -22,6 +22,7 @@ export default function Dashboard({ user, setUser, onLogout }) {
         onLogout={onLogout} 
         onProfileClick={onProfileClick} 
         onTestListClick={onTestListClick} // 👈 यह यहाँ जोड़ें
+          onHomeClick={() => setCurrentView('dashboard')} // 👈 यह जोड़ने से लोगो पर क्लिक करते ही डैशबोर्ड खुल जाएगा
       />
         
         {/* MAIN BODY CONTAINER */}
