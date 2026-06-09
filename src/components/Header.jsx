@@ -1,10 +1,8 @@
 // frontend/src/components/Header.jsx
 import React from 'react';
-import { useNavigate } from 'react-router-dom'; // 🟢 राउटिंग के लिए इम्पोर्ट किया
 
-export default function Header({ user, onLogout, onProfileClick }) {
-  const navigate = useNavigate(); // 🟢 नेविगेट हुक इनिशियलाइज किया
-
+// 🟢 onTestListClick और onHomeClick को प्रॉप्स में शामिल किया गया है
+export default function Header({ user, onLogout, onProfileClick, onTestListClick, onHomeClick }) {
   return (
     <header style={{
       display: 'flex',
@@ -15,10 +13,10 @@ export default function Header({ user, onLogout, onProfileClick }) {
       color: '#fff',
       boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
     }}>
-      {/* 🏡 लोगो एरिया (इस पर क्लिक करके भी होम पेज पर जा सकते हैं) */}
+      {/* 🏡 लोगो एरिया (क्लिक करने पर वापस डैशबोर्ड पर जाने के लिए) */}
       <div 
         style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
-        onClick={() => navigate('/')}
+        onClick={onHomeClick || (() => window.location.reload())} 
       >
         <h2 style={{ margin: 0, color: '#38bdf8', fontSize: '22px' }}>EWPP Training</h2>
         <span style={{ fontSize: '12px', background: '#334155', padding: '3px 8px', borderRadius: '4px' }}>Portal</span>
@@ -26,9 +24,9 @@ export default function Header({ user, onLogout, onProfileClick }) {
       
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
         
-        {/* 📝 नया जोड़ा गया: ऑनलाइन टेस्ट लिस्ट बटन (आपके डिज़ाइन थीम के अनुसार) */}
+        {/* 📝 ऑनलाइन टेस्ट लिस्ट बटन (स्टेट-बेस्ड ऑन-क्लिक के साथ) */}
         <button 
-          onClick={() => navigate('/tests')}
+          onClick={onTestListClick}
           style={{
             background: '#0284c7',
             color: '#fff',
@@ -49,7 +47,7 @@ export default function Header({ user, onLogout, onProfileClick }) {
           📝 ऑनलाइन टेस्ट लिस्ट
         </button>
 
-        {/* 👤 पार्टनर प्रोफाइल नाम (ओरिजिनल लॉजिक सुरक्षित है) */}
+        {/* 👤 पार्टनर प्रोफाइल नाम (ओरिजिनल लॉजिक पूरी तरह सुरक्षित) */}
         <span 
           onClick={onProfileClick}
           style={{ 
@@ -66,7 +64,7 @@ export default function Header({ user, onLogout, onProfileClick }) {
           👤 पार्टनर: <strong>{user?.name || 'Gautam'}</strong>
         </span>
         
-        {/* 🛑 लॉगआउट बटन (ओरिजिनल लॉजिक सुरक्षित है) */}
+        {/* 🛑 लॉगआउट बटन (ओरिजिनल लॉजिक पूरी तरह सुरक्षित) */}
         <button 
           onClick={onLogout}
           style={{
