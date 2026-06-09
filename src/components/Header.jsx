@@ -1,7 +1,7 @@
 // frontend/src/components/Header.jsx
 import React from 'react';
 
-// 🟢 onTestListClick और onHomeClick को प्रॉप्स में शामिल किया गया है
+// 🎯 ध्यान दें: यहाँ कर्ली ब्रेसेस {} के अंदर सभी प्रॉप्स का होना ज़रूरी है
 export default function Header({ user, onLogout, onProfileClick, onTestListClick, onHomeClick }) {
   return (
     <header style={{
@@ -13,7 +13,7 @@ export default function Header({ user, onLogout, onProfileClick, onTestListClick
       color: '#fff',
       boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
     }}>
-      {/* 🏡 लोगो एरिया (क्लिक करने पर वापस डैशबोर्ड पर जाने के लिए) */}
+      {/* 🏡 लोगो एरिया */}
       <div 
         style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
         onClick={onHomeClick || (() => window.location.reload())} 
@@ -24,7 +24,7 @@ export default function Header({ user, onLogout, onProfileClick, onTestListClick
       
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
         
-        {/* 📝 ऑनलाइन टेस्ट लिस्ट बटन (स्टेट-बेस्ड ऑन-क्लिक के साथ) */}
+        {/* 📝 ऑनलाइन टेस्ट लिस्ट बटन */}
         <button 
           onClick={onTestListClick}
           style={{
@@ -47,9 +47,9 @@ export default function Header({ user, onLogout, onProfileClick, onTestListClick
           📝 ऑनलाइन टेस्ट लिस्ट
         </button>
 
-        {/* 👤 पार्टनर प्रोफाइल नाम (ओरिजिनल लॉजिक पूरी तरह सुरक्षित) */}
+        {/* 👤 पार्टनर प्रोफाइल नाम */}
         <span 
-          onClick={onProfileClick}
+          onClick={onProfileClick} // 👈 यहाँ यह एरर मार रहा था अगर ऊपर रिसीव नहीं हुआ था
           style={{ 
             fontSize: '15px', 
             cursor: 'pointer',
@@ -64,7 +64,7 @@ export default function Header({ user, onLogout, onProfileClick, onTestListClick
           👤 पार्टनर: <strong>{user?.name || 'Gautam'}</strong>
         </span>
         
-        {/* 🛑 लॉगआउट बटन (ओरिजिनल लॉजिक पूरी तरह सुरक्षित) */}
+        {/* 🛑 लॉगआउट बटन */}
         <button 
           onClick={onLogout}
           style={{
