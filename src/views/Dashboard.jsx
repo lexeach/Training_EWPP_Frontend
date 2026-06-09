@@ -29,7 +29,7 @@ export default function Dashboard({ user, setUser, onLogout, onProfileClick }) {
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           
           {/* 2. LEFT SIDEBAR */}
-          <Sidebar />
+          {currentView !== 'tests' && <Sidebar />}
           
           {/* 3. RIGHT MAIN FRAME (सुरक्षित कंडीशनल रेंडरिंग) */}
           <div style={{ flex: 1, backgroundColor: '#f8fafc', overflowY: 'auto' }}>
