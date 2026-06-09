@@ -125,12 +125,11 @@ function App() {
   }
 
   // 🎯 CONDITION 3: सामान्य लॉगिन/डैशबोर्ड फ्लो
-  return (
+ return (
     <>
       {!user ? (
         <Login onLoginSuccess={handleLoginSuccess} />
       ) : (!user.isPaid || currentView === 'profile') ? ( 
-        // 🔒 अगर यूजर पेड नहीं है या प्रोफाइल व्यू पर है
         <Profile 
           user={user} 
           setUser={handleUserUpdateFromProfile} 
@@ -142,20 +141,15 @@ function App() {
             }
           }} 
         />
-      ) : currentView === 'tests' ? (
-        // 📝 🎯 ऑनलाइन टेस्ट लिस्ट व्यू रेंडरिंग (जब स्टेट 'tests' हो)
-        <TestListPage 
-          user={user} 
-          onBack={() => setCurrentView('dashboard')} // वापस मुख्य डैशबोर्ड पर आने के लिए
-        />
       ) : (
-        // 🟢 केवल पेड यूजर्स के लिए मुख्य डैशबोर्ड व्यू
+        // 🟢 यहाँ सीधे Dashboard लोड होगा और हम 'currentView' को नीचे भेज देंगे
         <Dashboard 
           user={user} 
           setUser={setUser} 
           onLogout={handleLogout} 
-          onProfileClick={() => setCurrentView('profile')} // Dashboard.jsx को सही ढंग से पास किया गया
-          onTestListClick={() => setCurrentView('tests')} // Dashboard.jsx को सही ढंग से पास किया गया
+          onProfileClick={() => setCurrentView('profile')} 
+          // 💡 बटन क्लिक होने पर हम पैरेंट की स्टेट बदलने के बजाय सीधे हैंडलर भेज रहे हैं
+          onTestListClick={onTestListClick} 
         />
       )}
     </>
