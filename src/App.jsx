@@ -6,7 +6,7 @@ import Profile from './views/Profile';
 import ResetPassword from './views/ResetPassword';
 import axios from 'axios';
 import AdminPanel from './views/AdminPanel'; 
-import TestListPage from './pages/TestListPage'; // 🟢 नया टेस्ट लिस्ट पेज इम्पोर्ट किया
+import TestListPage from './views/TestListPage'; // 🟢 नया टेस्ट लिस्ट पेज इम्पोर्ट किया
 
 function App() {
   // लोकलस्टोरेज से यूजर का शुरुआती सेशन निकालना
