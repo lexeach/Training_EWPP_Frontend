@@ -3,32 +3,52 @@ import React, { useContext } from 'react';
 import { ProgressContext } from '../context/ProgressContext';
 
 export default function TestListPage({ user, onBack }) {
-  // कांटेक्स्ट से डेटा निकाला और सेफ फॉलबैक डिफाइन किए
+  // 🔒 कांटेक्स्ट से डेटा निकालते समय ही डिफ़ॉल्ट वैल्यूज सेट कर दीं
   const context = useContext(ProgressContext) || {};
-  const completedVideos = context.completedVideos || [];
-  const modules = context.modules || [];
+  const completedVideos = Array.isArray(context.completedVideos) ? context.completedVideos : [];
+  const modules = Array.isArray(context.modules) ? context.modules : [];
   const setCurrentVideo = context.setCurrentVideo || (() => {});
 
-  // 💡 वीडियो की फ्लैट लिस्ट बिना किसी क्रैश रिस्क के तैयार करना
+  // 🛡️ पूरी तरह सुरक्षित वीडियो लिस्ट फ़िल्टरिंग (हर लेवल पर सुरक्षा जाँच)
   let watchedVideosList = [];
   try {
-    const allVideos = modules.flatMap(m => 
-      m.subModules ? m.subModules.flatMap(sm => sm.videos || []) : (m.videos || [])
-    );
-    watchedVideosList = allVideos.filter(v => completedVideos.includes(v.videoId));
+    const allVideos = [];
+    
+    modules.forEach(m => {
+      if (!m) return;
+      
+      // 1. अगर मॉड्यूल के अंदर सीधे वीडियोस हैं
+      if (Array.isArray(m.videos)) {
+        allVideos.push(...m.videos);
+      }
+      
+      // 2. अगर मॉड्यूल के अंदर सब-मॉड्यूल हैं
+      if (Array.isArray(m.subModules)) {
+        m.subModules.forEach(sm => {
+          if (sm && Array.isArray(sm.videos)) {
+            allVideos.push(...sm.videos);
+          }
+        });
+      }
+    });
+
+    // केवल वही वीडियोस निकालें जिनकी ID 'completedVideos' ऐरे में मौजूद है
+    watchedVideosList = allVideos.filter(v => v && v.videoId && completedVideos.includes(v.videoId));
   } catch (err) {
-    console.error("Error structuring video list:", err);
+    console.error("❌ TestListPage में वीडियो लिस्ट बनाते समय एरर आई:", err);
   }
 
   const handleStartTest = (video) => {
-    setCurrentVideo(video);
-    onBack(); 
+    if (video && typeof setCurrentVideo === 'function') {
+      setCurrentVideo(video);
+      if (typeof onBack === 'function') onBack();
+    }
   };
 
   return (
     <div style={{ padding: '30px', maxWidth: '1000px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ margin: 0, color: '#1e293b' }}>📝 आपकी ऑनलाइन टेस्ट लिस्ट ({watchedVideosList.length})</h2>
+        <h2 style={{ margin: 0, color: '#1e293b', fontSize: '22px', fontWeight: '700' }}>📝 आपकी ऑनलाइन टेस्ट लिस्ट ({watchedVideosList.length})</h2>
         <button 
           onClick={onBack}
           style={{ backgroundColor: '#475569', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
@@ -38,8 +58,9 @@ export default function TestListPage({ user, onBack }) {
       </div>
 
       {watchedVideosList.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#64748b', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-          अभी आपने कोई वीडियो पूरा नहीं किया है। टेस्ट देने के लिए पहले कोर्स वीडियो पूरा देखें।
+        <div style={{ textAlign: 'center', padding: '40px', color: '#64748b', backgroundColor: '#ffffff', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+          <p style={{ fontSize: '16px', fontWeight: '500', margin: '0 0 5px 0' }}>अभी यहाँ कोई टेस्ट उपलब्ध नहीं है।</p>
+          <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>टेस्ट देने के लिए पहले कोर्स का कोई भी वीडियो पूरा देखें।</p>
         </div>
       ) : (
         <div style={{ backgroundColor: '#fff', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
@@ -54,13 +75,17 @@ export default function TestListPage({ user, onBack }) {
             </thead>
             <tbody>
               {watchedVideosList.map((video) => {
-                const testResult = user?.quizResults?.find(r => r.videoId === video.videoId && r.passed === true);
+                if (!video || !video.videoId) return null;
+                
+                // सुरक्षित तरीके से टेस्ट का रिजल्ट ढूंढना
+                const userResults = Array.isArray(user?.quizResults) ? user.quizResults : [];
+                const testResult = userResults.find(r => r && r.videoId === video.videoId && r.passed === true);
 
                 return (
                   <tr key={video.videoId} style={{ borderBottom: '1px solid #e2e8f0' }}>
                     <td style={{ padding: '14px', fontWeight: '500', color: '#334155' }}>
                       <span style={{ color: '#0284c7', marginRight: '6px' }}>[{video.videoId}]</span> 
-                      {video.title}
+                      {video.title || 'बिना नाम का वीडियो'}
                     </td>
                     <td style={{ padding: '14px', fontWeight: 'bold', color: testResult ? 'green' : '#94a3b8' }}>
                       {testResult ? testResult.score : '—'}
