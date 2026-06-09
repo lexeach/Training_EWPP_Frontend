@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import VideoPlayer from '../components/VideoPlayer';
-import TestListPage from '../pages/TestListPage'; // 🟢 यहाँ इम्पोर्ट करें
+import TestListPage from '../views/TestListPage'; // 🟢 यहाँ इम्पोर्ट करें
 import { ProgressProvider } from '../context/ProgressContext';
 
 export default function Dashboard({ user, setUser, onLogout, onProfileClick }) {
