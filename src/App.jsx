@@ -149,7 +149,7 @@ function App() {
           onLogout={handleLogout} 
           onProfileClick={() => setCurrentView('profile')} 
           // 💡 बटन क्लिक होने पर हम पैरेंट की स्टेट बदलने के बजाय सीधे हैंडलर भेज रहे हैं
-          onTestListClick={onTestListClick} 
+         
         />
       )}
     </>
