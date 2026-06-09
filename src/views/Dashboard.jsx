@@ -3,14 +3,13 @@ import React, { useState } from 'react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import VideoPlayer from '../components/VideoPlayer';
+import TestListPage from '../pages/TestListPage'; // 🟢 यहाँ इम्पोर्ट करें
 import { ProgressProvider } from '../context/ProgressContext';
 
-// 🎯 सुधार 1: पैरेंट (App.jsx) से आ रहे 'onProfileClick' और 'onTestListClick' को यहाँ रिसीव किया
-export default function Dashboard({ user, setUser, onLogout, onProfileClick, onTestListClick }) {
-  // 🔄 स्टेट ट्रैक करने के लिए कि यूजर अभी 'training' मोड में है या अपना 'stats' (परफॉर्मेंस डैशबोर्ड) देख रहा है
+export default function Dashboard({ user, setUser, onLogout, onProfileClick }) {
+  // 🔄 स्टेट: 'training' (वीडियो), 'stats' (परफॉर्मेंस टेबल), या 'tests' (टेस्ट लिस्ट पेज)
   const [currentView, setCurrentView] = useState('training');
 
-  // यूजर के क्विज़ परिणाम (सेफ फॉलबैक के साथ)
   const results = user?.quizResults || [];
 
   return (
@@ -21,23 +20,31 @@ export default function Dashboard({ user, setUser, onLogout, onProfileClick, onT
         <Header 
           user={user} 
           onLogout={onLogout} 
-          onProfileClick={onProfileClick} // 🟢 अब यह पूरी तरह डिफाइंड है और क्रैश नहीं करेगा
-          onTestListClick={onTestListClick} // 🟢 पैरेंट से आया हुआ हैंडलर यहाँ सुरक्षित पास कर दिया
-          onHomeClick={() => setCurrentView('training')} // 🎯 सुधार 2: लोगो पर क्लिक करने पर व्यू वापस 'training' (वीडियो प्लेयर) सेट होगा
+          onProfileClick={onProfileClick} 
+          onTestListClick={() => setCurrentView('tests')} // 🟢 क्लिक करते ही राइट साइड में टेस्ट लिस्ट खुलेगी!
+          onHomeClick={() => setCurrentView('training')} 
         />
         
         {/* MAIN BODY CONTAINER */}
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           
-          {/* 2. LEFT SIDEBAR (Modules & Accordion) */}
+          {/* 2. LEFT SIDEBAR */}
           <Sidebar />
           
-          {/* 3. RIGHT MAIN FRAME (कंडीशनल रेंडरिंग: व्यू के आधार पर वीडियो या परफॉर्मेंस टेबल दिखेगी) */}
+          {/* 3. RIGHT MAIN FRAME (कंडीशनल रेंडरिंग) */}
           {currentView === 'training' ? (
-            // नॉर्मल मोड: वीडियो प्लेयर और गाइडलाइंस
+            // 📺 व्यू 1: नॉर्मल वीडियो प्लेयर मोड
             <VideoPlayer />
+          ) : currentView === 'tests' ? (
+            // 📝 व्यू 2: बेहतरीन ऑनलाइन टेस्ट लिस्ट पेज (हेडर/साइडबार के साथ सुरक्षित)
+            <div style={{ flex: 1, background: '#f8fafc', overflowY: 'auto' }}>
+              <TestListPage 
+                user={user} 
+                onBack={() => setCurrentView('training')} // वापस वीडियो प्लेयर पर जाने के लिए
+              />
+            </div>
           ) : (
-            // 📊 असेसमेंट परफॉर्मेंस डैशबोर्ड मोड (खूबसूरत और आई-कंफर्टेबल टेबल यूआई)
+            // 📊 व्यू 3: असेसमेंट परफॉर्मेंस डैशबोर्ड मोड
             <div style={{ flex: 1, padding: '30px', background: '#f8fafc', overflowY: 'auto' }}>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', maxWidth: '900px', margin: '0 auto 20px auto' }}>
