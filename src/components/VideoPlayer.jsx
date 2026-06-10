@@ -1,7 +1,8 @@
+// frontend/src/components/VideoPlayer.jsx
 import React, { useContext, useRef, useState, useEffect } from 'react';
 import { ProgressContext } from '../context/ProgressContext';
 
-export default function VideoPlayer({ onQuizStateChange }) {
+export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess }) {
   const { 
     currentVideo, 
     updateProgressOnBackend, 
@@ -123,6 +124,7 @@ export default function VideoPlayer({ onQuizStateChange }) {
     }
   };
 
+  // 🎯 [वाटरप्रूफ फिक्स]: क्विज़ सबमिशन और पैरेंट स्टेट सिंकिंग का लॉजिक
   const handleQuizSubmit = async () => {
     const totalQuestions = quizData.length;
     if (Object.keys(selectedAnswers).length < totalQuestions) {
@@ -130,17 +132,31 @@ export default function VideoPlayer({ onQuizStateChange }) {
       return;
     }
     const answersArray = quizData.map((_, index) => selectedAnswers[index]);
+    
     try {
       const result = await submitQuizOnBackend(currentVideo.videoId, answersArray);
+      
       if (result) {
         if (result.passed) {
           alert(`🎉 बधाई हो! स्कोर: ${result.score}/${result.totalQuestions}`);
+          
+          // 🚀 बैकएंड से आए लाइव 'quizResults' को तुरंत पैरेंट डैशबोर्ड में सिंक करें
+          if (onQuizSubmitSuccess && result.quizResults) {
+            onQuizSubmitSuccess(result.quizResults);
+          }
+
           await updateProgressOnBackend(currentVideo.videoId);
           setShowQuiz(false);
           setSelectedAnswers({});
           handleNextVideoSwitch();
         } else {
           alert(`❌ आप टेस्ट पास नहीं कर पाए। स्कोर: ${result.score}/${result.totalQuestions}\n\nदोबारा प्रयास करें।`);
+          
+          // 🚀 फेल होने पर भी मार्क्स डेटाबेस में अपडेट हुए हैं, उसे भी तुरंत डैशबोर्ड में भेजें
+          if (onQuizSubmitSuccess && result.quizResults) {
+            onQuizSubmitSuccess(result.quizResults);
+          }
+          
           setShowQuiz(false);
           setSelectedAnswers({});
           setMaxTimeWatched(0); 
@@ -148,6 +164,7 @@ export default function VideoPlayer({ onQuizStateChange }) {
         }
       }
     } catch (err) {
+      console.error("Quiz submission error on frontend:", err);
       alert("🛑 तकनीकी त्रुटि आई है।");
     }
   };
