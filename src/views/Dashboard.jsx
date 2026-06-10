@@ -1,5 +1,5 @@
 // frontend/src/views/Dashboard.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import VideoPlayer from '../components/VideoPlayer';
@@ -15,28 +15,36 @@ export default function Dashboard({ user, setUser, onLogout, onProfileClick }) {
   // ◀️ वापस कोर्स पर जाने का कॉमन फंक्शन
   const handleBackToCourseFromQuiz = () => {
     setIsQuizActiveInPlayer(false);
+    // लोकल स्टोरेज में अगर कोई पुराना फ्लैग बचा हो तो उसे साफ करें
+    localStorage.removeItem('autoStartQuiz');
     window.location.reload(); 
+  };
+
+  // 🎯 [बुलेटप्रूफ फिक्स] वीडियो प्लेयर से आने वाले सिग्नल को पैरेंट की स्टेट में सिंक करना
+  const handleQuizStateChange = (isActive) => {
+    console.log("📢 Dashboard: Quiz Active Status changed to ->", isActive);
+    setIsQuizActiveInPlayer(isActive);
   };
 
   return (
     <ProgressProvider user={user} setUser={setUser}>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', fontFamily: 'system-ui, sans-serif' }}>
         
-        {/* 1. TOP BAR (🚨 हेडर में क्विज़ स्टेट और बैक फ़ंक्शन भेजा) */}
+        {/* 1. TOP BAR */}
         <Header 
           user={user} 
           onLogout={onLogout} 
           onProfileClick={onProfileClick} 
           onTestListClick={() => { setIsQuizActiveInPlayer(false); setCurrentView('tests'); }} 
           onHomeClick={() => { setIsQuizActiveInPlayer(false); setCurrentView('training'); }}
-          isQuizActive={isQuizActiveInPlayer} // 🟢 भेजा
-          onBackFromQuiz={handleBackToCourseFromQuiz} // 🟢 भेजा
+          isQuizActive={isQuizActiveInPlayer}       // 🟢 हेडर को स्टेट भेजी
+          onBackFromQuiz={handleBackToCourseFromQuiz} // 🟢 हेडर को फंक्शन भेजा
         />
         
         {/* MAIN BODY CONTAINER */}
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           
-          {/* 2. LEFT SIDEBAR */}
+          {/* 2. LEFT SIDEBAR (क्विज़ एक्टिव होने पर साइडबार छुपेगा) */}
           {currentView !== 'tests' && !isQuizActiveInPlayer && <Sidebar />}
           
           {/* 3. RIGHT MAIN FRAME */}
@@ -44,8 +52,8 @@ export default function Dashboard({ user, setUser, onLogout, onProfileClick }) {
             
             {currentView === 'training' && (
               <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                {/* 📹 वीडियो प्लेयर (यहाँ से अब ऊपर वाली बटन पट्टी हटा दी गई है, क्योंकि वो हेडर में चली गई है) */}
-                <VideoPlayer onQuizStateChange={(isActive) => setIsQuizActiveInPlayer(isActive)} />
+                {/* 📹 वीडियो प्लेयर (स्टेट चेंज हैंडलर को यहाँ मैप किया) */}
+                <VideoPlayer onQuizStateChange={handleQuizStateChange} />
               </div>
             )}
 
