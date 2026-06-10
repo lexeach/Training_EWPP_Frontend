@@ -1,3 +1,4 @@
+// frontend/src/views/Dashboard.jsx
 import React, { useState } from 'react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
@@ -11,6 +12,7 @@ export default function Dashboard({ user, setUser, onLogout, onProfileClick }) {
 
   const results = user?.quizResults || [];
 
+  // ◀️ वापस कोर्स पर जाने का कॉमन फंक्शन
   const handleBackToCourseFromQuiz = () => {
     setIsQuizActiveInPlayer(false);
     window.location.reload(); 
@@ -20,33 +22,29 @@ export default function Dashboard({ user, setUser, onLogout, onProfileClick }) {
     <ProgressProvider user={user} setUser={setUser}>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', fontFamily: 'system-ui, sans-serif' }}>
         
+        {/* 1. TOP BAR (🚨 हेडर में क्विज़ स्टेट और बैक फ़ंक्शन भेजा) */}
         <Header 
           user={user} 
           onLogout={onLogout} 
           onProfileClick={onProfileClick} 
           onTestListClick={() => { setIsQuizActiveInPlayer(false); setCurrentView('tests'); }} 
-          onHomeClick={() => { setIsQuizActiveInPlayer(false); setCurrentView('training'); }} 
+          onHomeClick={() => { setIsQuizActiveInPlayer(false); setCurrentView('training'); }}
+          isQuizActive={isQuizActiveInPlayer} // 🟢 भेजा
+          onBackFromQuiz={handleBackToCourseFromQuiz} // 🟢 भेजा
         />
         
+        {/* MAIN BODY CONTAINER */}
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           
-          {/* 🚨 साइडबार अब दोनों कंडीशन (मैनुअल या ऑटोमैटिक टेस्ट) में सेफली हाइड रहेगा */}
+          {/* 2. LEFT SIDEBAR */}
           {currentView !== 'tests' && !isQuizActiveInPlayer && <Sidebar />}
           
+          {/* 3. RIGHT MAIN FRAME */}
           <div style={{ flex: 1, backgroundColor: '#f8fafc', overflowY: 'auto' }}>
             
             {currentView === 'training' && (
               <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                
-                {isQuizActiveInPlayer && (
-                  <div style={{ padding: '15px 20px', background: '#ffffff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center' }}>
-                    <button onClick={handleBackToCourseFromQuiz} style={{ background: '#0284c7', color: '#fff', padding: '8px 16px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
-                      ◀️ वापस कोर्स पर जाएँ
-                    </button>
-                    <span style={{ marginLeft: '15px', color: '#64748b', fontSize: '14px' }}>(असेसमेंट मोड एक्टिवेटेड)</span>
-                  </div>
-                )}
-
+                {/* 📹 वीडियो प्लेयर (यहाँ से अब ऊपर वाली बटन पट्टी हटा दी गई है, क्योंकि वो हेडर में चली गई है) */}
                 <VideoPlayer onQuizStateChange={(isActive) => setIsQuizActiveInPlayer(isActive)} />
               </div>
             )}
@@ -57,7 +55,6 @@ export default function Dashboard({ user, setUser, onLogout, onProfileClick }) {
 
             {currentView === 'stats' && (
               <div style={{ padding: '30px' }}>
-                {/* सांख्यिकी तालिका */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', maxWidth: '900px', margin: '0 auto 20px auto' }}>
                   <h2 style={{ fontSize: '22px', fontWeight: '700' }}>📊 आपका ट्रेनिंग परफॉरमेंस डैशबोर्ड</h2>
                   <button onClick={() => setCurrentView('training')} style={{ background: '#0284c7', color: '#fff', padding: '10px 18px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>◀️ वापस कोर्स पर जाएँ</button>
