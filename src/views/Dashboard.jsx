@@ -5,11 +5,39 @@ import Sidebar from '../components/Sidebar';
 import VideoPlayer from '../components/VideoPlayer';
 import TestListPage from '../views/TestListPage'; 
 import { ProgressProvider } from '../context/ProgressContext';
+import axios from 'axios'; // 🟢 डेटाबेस से सिंक करने के लिए
 
-export default function Dashboard({ user, setUser, onLogout, onProfileClick }) {
+export default function Dashboard({ user: initialUser, setUser: setGlobalUser, onLogout, onProfileClick }) {
+  // 🎯 इनिशियल यूजर प्रॉप्स से आएगा, लेकिन री-डेप्लॉय/रिफ्रेश होने पर डेटाबेस से लाइव सिंक होगा
+  const [user, setUser] = useState(initialUser);
   const [currentView, setCurrentView] = useState('training');
   const [isQuizActiveInPlayer, setIsQuizActiveInPlayer] = useState(false);
 
+  // 🔄 [DATABASE AUTO-SYNC]: पेज लोड या री-डेप्लॉय होने पर डेटाबेस से ताज़ा मार्क्स खींचना
+  useEffect(() => {
+    const fetchLatestUserData = async () => {
+      try {
+        const token = localStorage.getItem('token'); // आपकी ऐप का ऑथेंटिकेशन टोकन
+        if (!token) return;
+
+        // 🎯 ध्यान दें: यहाँ अपनी प्रोफ़ाइल डेटा फ़ेच करने वाली API का सही एंडपॉइंट डालें (उदा: '/api/auth/me')
+        const response = await axios.get('/api/auth/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (response.data && response.data.user) {
+          setUser(response.data.user);
+          if (setGlobalUser) setGlobalUser(response.data.user); // पैरेंट/ग्लोबल स्टेट को भी सिंक किया
+        }
+      } catch (err) {
+        console.error("❌ डेटाबेस से यूज़र डेटा सिंक करने में एरर:", err);
+      }
+    };
+
+    fetchLatestUserData();
+  }, [setGlobalUser]);
+
+  // डेटाबेस से लाइव सिंक होने वाले रिज़ल्ट्स
   const results = user?.quizResults || [];
 
   // ◀️ वापस कोर्स पर जाने का कॉमन फंक्शन
@@ -52,8 +80,16 @@ export default function Dashboard({ user, setUser, onLogout, onProfileClick }) {
             
             {currentView === 'training' && (
               <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                {/* 📹 वीडियो प्लेयर (स्टेट चेंज हैंडलर को यहाँ मैप किया) */}
-                <VideoPlayer onQuizStateChange={handleQuizStateChange} />
+                {/* 📹 वीडियो प्लेयर (स्टेट चेंज और क्विज़ सबमिट सक्सेस दोनों को यहाँ हैंडल किया) */}
+                <VideoPlayer 
+                  onQuizStateChange={handleQuizStateChange} 
+                  onQuizSubmitSuccess={(updatedQuizResults) => {
+                    // 🟢 जैसे ही टेस्ट सबमिट होगा, तुरंत बिना पेज रिफ्रेश किए मार्क्स स्टेट में लाइव सिंक हो जाएँगे
+                    const updatedUser = { ...user, quizResults: updatedQuizResults };
+                    setUser(updatedUser);
+                    if (setGlobalUser) setGlobalUser(updatedUser);
+                  }}
+                />
               </div>
             )}
 
