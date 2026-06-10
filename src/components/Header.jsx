@@ -1,8 +1,16 @@
 // frontend/src/components/Header.jsx
 import React from 'react';
 
-// 🎯 ध्यान दें: यहाँ कर्ली ब्रेसेस {} के अंदर सभी प्रॉप्स का होना ज़रूरी है
-export default function Header({ user, onLogout, onProfileClick, onTestListClick, onHomeClick }) {
+// 🎯 ध्यान दें: यहाँ कर्ली ब्रेसेस {} के अंदर नए प्रॉप्स (isQuizActive, onBackFromQuiz) को भी जोड़ दिया गया है
+export default function Header({ 
+  user, 
+  onLogout, 
+  onProfileClick, 
+  onTestListClick, 
+  onHomeClick,
+  isQuizActive,       // 🟢 डैशबोर्ड से रिसीव किया
+  onBackFromQuiz      // 🟢 डैशबोर्ड से रिसीव किया
+}) {
   return (
     <header style={{
       display: 'flex',
@@ -16,7 +24,7 @@ export default function Header({ user, onLogout, onProfileClick, onTestListClick
       {/* 🏡 लोगो एरिया */}
       <div 
         style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
-        onClick={onHomeClick || (() => window.location.reload())} 
+        onClick={!isQuizActive ? (onHomeClick || (() => window.location.reload())) : undefined} 
       >
         <h2 style={{ margin: 0, color: '#38bdf8', fontSize: '22px' }}>EWPP Training</h2>
         <span style={{ fontSize: '12px', background: '#334155', padding: '3px 8px', borderRadius: '4px' }}>Portal</span>
@@ -24,64 +32,94 @@ export default function Header({ user, onLogout, onProfileClick, onTestListClick
       
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
         
-        {/* 📝 ऑनलाइन टेस्ट लिस्ट बटन */}
-        <button 
-          onClick={onTestListClick}
-          style={{
-            background: '#0284c7',
-            color: '#fff',
-            border: 'none',
-            padding: '7px 16px',
-            borderRadius: '4px',
-            fontWeight: 'bold',
-            fontSize: '14px',
-            cursor: 'pointer',
-            transition: '0.2s',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-          onMouseOver={(e) => e.target.style.background = '#0369a1'}
-          onMouseOut={(e) => e.target.style.background = '#0284c7'}
-        >
-          📝 ऑनलाइन टेस्ट लिस्ट
-        </button>
+        {isQuizActive ? (
+          // 🚨 [DYNAMIC फिक्स] अगर आंसर मोड (Quiz) ऑन है, तो हेडर के राइट साइड में सिर्फ यह चमकीला बैक बटन दिखेगा
+          <button
+            onClick={onBackFromQuiz}
+            style={{
+              background: '#eab308', // आकर्षक पीला रंग ताकि यूज़र का ध्यान जाए
+              color: '#0f172a',
+              border: 'none',
+              padding: '8px 18px',
+              borderRadius: '4px',
+              fontWeight: 'bold',
+              fontSize: '14px',
+              cursor: 'pointer',
+              transition: '0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.15)'
+            }}
+            onMouseOver={(e) => e.target.style.background = '#ca8a04'}
+            onMouseOut={(e) => e.target.style.background = '#eab308'}
+          >
+            ◀️ वापस कोर्स पर जाएँ
+          </button>
+        ) : (
+          // 🏠 सामान्य मोड में दिखने वाले आपके ओरिजिनल रनिंग बटन्स और होवर इफेक्ट्स
+          <>
+            {/* 📝 ऑनलाइन टेस्ट लिस्ट बटन */}
+            <button 
+              onClick={onTestListClick}
+              style={{
+                background: '#0284c7',
+                color: '#fff',
+                border: 'none',
+                padding: '7px 16px',
+                borderRadius: '4px',
+                fontWeight: 'bold',
+                fontSize: '14px',
+                cursor: 'pointer',
+                transition: '0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+              onMouseOver={(e) => e.target.style.background = '#0369a1'}
+              onMouseOut={(e) => e.target.style.background = '#0284c7'}
+            >
+              📝 ऑनलाइन टेस्ट लिस्ट
+            </button>
 
-        {/* 👤 पार्टनर प्रोफाइल नाम */}
-        <span 
-          onClick={onProfileClick} // 👈 यहाँ यह एरर मार रहा था अगर ऊपर रिसीव नहीं हुआ था
-          style={{ 
-            fontSize: '15px', 
-            cursor: 'pointer',
-            padding: '5px 10px',
-            borderRadius: '4px',
-            transition: '0.2s',
-            userSelect: 'none'
-          }}
-          onMouseOver={(e) => e.currentTarget.style.background = '#334155'}
-          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-        >
-          👤 पार्टनर: <strong>{user?.name || 'Gautam'}</strong>
-        </span>
-        
-        {/* 🛑 लॉगआउट बटन */}
-        <button 
-          onClick={onLogout}
-          style={{
-            background: '#ef4444',
-            color: '#fff',
-            border: 'none',
-            padding: '6px 15px',
-            borderRadius: '4px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: '0.2s'
-          }}
-          onMouseOver={(e) => e.target.style.background = '#dc2626'}
-          onMouseOut={(e) => e.target.style.background = '#ef4444'}
-        >
-          Logout
-        </button>
+            {/* 👤 पार्टनर प्रोफाइल नाम */}
+            <span 
+              onClick={onProfileClick}
+              style={{ 
+                fontSize: '15px', 
+                cursor: 'pointer',
+                padding: '5px 10px',
+                borderRadius: '4px',
+                transition: '0.2s',
+                userSelect: 'none'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = '#334155'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              👤 पार्टनर: <strong>{user?.name || 'Gautam'}</strong>
+            </span>
+            
+            {/* 🛑 लॉगआउट बटन */}
+            <button 
+              onClick={onLogout}
+              style={{
+                background: '#ef4444',
+                color: '#fff',
+                border: 'none',
+                padding: '6px 15px',
+                borderRadius: '4px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: '0.2s'
+              }}
+              onMouseOver={(e) => e.target.style.background = '#dc2626'}
+              onMouseOut={(e) => e.target.style.background = '#ef4444'}
+            >
+              Logout
+            </button>
+          </>
+        )}
+
       </div>
     </header>
   );
