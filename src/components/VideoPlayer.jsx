@@ -156,6 +156,7 @@ export default function VideoPlayer() {
   };
 
   // 📝 टेस्ट/असेसमेंट सबमिट करने का हैंडलर
+  // 📝 टेस्ट/असेसमेंट सबमिट करने का हैंडलर
   const handleQuizSubmit = async () => {
     const totalQuestions = quizData.length;
     const answeredCount = Object.keys(selectedAnswers).length;
@@ -167,26 +168,46 @@ export default function VideoPlayer() {
 
     const answersArray = quizData.map((_, index) => selectedAnswers[index]);
     
-    // बैकएंड पर क्विज़ सबमिट करें (यह डेटाबेस में पास/फेल और स्कोर स्टोर करता है)
-    const result = await submitQuizOnBackend(currentVideo.videoId, answersArray);
-    
-    if (result) {
-      if (result.passed) {
-        alert(`🎉 बधाई हो! आप टेस्ट पास कर चुके हैं। स्कोर: ${result.score}/${result.totalQuestions}`);
-        
-        // 🎯 सुधार: टेस्ट पास होने के बाद भी प्रोग्रेस को दोबारा सिंक करें ताकि डेटाबेस में प्रोग्रेस लॉक हो जाए
-        await updateProgressOnBackend(currentVideo.videoId);
-        
-        setShowQuiz(false);
-        setSelectedAnswers({});
-        handleNextVideoSwitch(); // टेस्ट पास होने पर ही अगला वीडियो लोड होगा
-      } else {
-        alert(`❌ आप टेस्ट पास नहीं कर पाए। स्कोर: ${result.score}/${result.totalQuestions}\n\nपास होने के लिए कम से कम 50% सही उत्तर आवश्यक हैं। कृपया वीडियो दोबारा देखें और फिर से प्रयास करें।`);
-        setShowQuiz(false);
-        setSelectedAnswers({});
-        setMaxTimeWatched(0); // वीडियो को दोबारा से देखने के लिए सेफगार्ड रिसेट
-        if (videoRef.current) videoRef.current.currentTime = 0;
+    try {
+      // 1. बैकएंड पर क्विज़ सबमिट करें (डेटाबेस में स्कोर और पास/फेल तुरंत स्टोर करें)
+      const result = await submitQuizOnBackend(currentVideo.videoId, answersArray);
+      
+      if (result) {
+        if (result.passed) {
+          alert(`🎉 बधाई हो! आप टेस्ट पास कर चुके हैं। स्कोर: ${result.score}/${result.totalQuestions}`);
+          
+          // 🎯 बैकएंड प्रोग्रेस को तुरंत सिंक करें (ताकि पेंडिंग न रहे)
+          try {
+            await updateProgressOnBackend(currentVideo.videoId);
+            console.log("💾 डेटाबेस में प्रोग्रेस सफलतापूर्वक सिंक हो गई है।");
+          } catch (syncErr) {
+            console.error("❌ बैकएंड प्रोग्रेस सिंक करने में एरर आई, लेकिन स्कोर सेव हो चुका है:", syncErr);
+          }
+
+          // 🔒 स्टेट्स को सेफली साफ़ करें ताकि यूआई वापस नॉर्मल हो जाए
+          setShowQuiz(false);
+          setSelectedAnswers({});
+
+          // ⚠️ अगले वीडियो पर स्विच करने वाले लॉजिक को सेफ ब्लॉक में रखें ताकि इसके क्रैश होने से बैकएंड न प्रभावित हो
+          try {
+            handleNextVideoSwitch(); 
+          } catch (switchErr) {
+            console.error("❌ अगले वीडियो पर स्विच करते समय फ्रंटएंड एरर आई:", switchErr);
+            // अगर क्रैश हो भी जाए, तो यूजर को मैनुअली रिफ्रेश करने को कहें, डेटाबेस में स्टेटस जा चुका है!
+            alert("⚠️ फ्रंटएंड लोड करने में छोटी सी समस्या आई है। कृपया एक बार पेज को Refresh (F5) कर लें, आपका टेस्ट सेव हो चुका है।");
+          }
+
+        } else {
+          alert(`❌ आप टेस्ट पास नहीं कर पाए। स्कोर: ${result.score}/${result.totalQuestions}\n\nपास होने के लिए कम से कम 50% सही उत्तर आवश्यक हैं। कृपया वीडियो दोबारा देखें और फिर से प्रयास करें।`);
+          setShowQuiz(false);
+          setSelectedAnswers({});
+          setMaxTimeWatched(0); 
+          if (videoRef.current) videoRef.current.currentTime = 0;
+        }
       }
+    } catch (globalErr) {
+      console.error("❌ क्विज़ सबमिशन के दौरान गंभीर एरर:", globalErr);
+      alert("🛑 टेस्ट सबमिट करने में कोई तकनीकी त्रुटि आई है। कृपया कंसोल चेक करें।");
     }
   };
 
