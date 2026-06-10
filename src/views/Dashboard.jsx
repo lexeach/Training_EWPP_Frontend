@@ -9,8 +9,18 @@ import { ProgressProvider } from '../context/ProgressContext';
 export default function Dashboard({ user, setUser, onLogout, onProfileClick }) {
   // 🔄 स्टेट: 'training' (वीडियो प्लेयर), 'tests' (टेस्ट लिस्ट), या 'stats' (परफॉर्मेंस टेबल)
   const [currentView, setCurrentView] = useState('training');
+  
+  // 🎯 नई स्टेट: ट्रैक करेगी कि क्या वीडियो प्लेयर के अंदर क्विज़ मोड चालू है
+  const [isQuizActiveInPlayer, setIsQuizActiveInPlayer] = useState(false);
 
   const results = user?.quizResults || [];
+
+  // ◀️ क्विज़ मोड से वापस सामान्य वीडियो कोर्स पर लौटने का हैंडलर
+  const handleBackToCourseFromQuiz = () => {
+    setIsQuizActiveInPlayer(false);
+    // यह फ़ोर्स करेगा कि यूआई री-रेंडर होकर वापस सामान्य प्लेयर व्यू पर आ जाए
+    window.location.reload(); 
+  };
 
   return (
     <ProgressProvider user={user} setUser={setUser}>
@@ -21,25 +31,67 @@ export default function Dashboard({ user, setUser, onLogout, onProfileClick }) {
           user={user} 
           onLogout={onLogout} 
           onProfileClick={onProfileClick} 
-          onTestListClick={() => setCurrentView('tests')} // 🟢 टेस्ट बटन पर क्लिक करने पर राइट साइड में खुलेगा
-          onHomeClick={() => setCurrentView('training')} 
+          onTestListClick={() => {
+            setIsQuizActiveInPlayer(false); // सेफ़गार्ड
+            setCurrentView('tests');
+          }} 
+          onHomeClick={() => {
+            setIsQuizActiveInPlayer(false); // सेफ़गार्ड
+            setCurrentView('training');
+          }} 
         />
         
         {/* MAIN BODY CONTAINER */}
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           
-          {/* 2. LEFT SIDEBAR */}
-          {currentView !== 'tests' && <Sidebar />}
+          {/* 2. LEFT SIDEBAR (🚨 सुपर फिक्स: अगर टेस्ट लिस्ट खुली हो या वीडियो प्लेयर में क्विज़ चल रहा हो, तो साइडबार हाइड होगा) */}
+          {currentView !== 'tests' && !isQuizActiveInPlayer && <Sidebar />}
           
           {/* 3. RIGHT MAIN FRAME (सुरक्षित कंडीशनल रेंडरिंग) */}
           <div style={{ flex: 1, backgroundColor: '#f8fafc', overflowY: 'auto' }}>
             
             {currentView === 'training' && (
-              <VideoPlayer />
+              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                
+                {/* ⬅️ नया बैक बटन: यह केवल तब दिखेगा जब यूज़र वीडियो के अंदर क्विज़/असेसमेंट मोड में होगा */}
+                {isQuizActiveInPlayer && (
+                  <div style={{ padding: '15px 20px', background: '#ffffff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center' }}>
+                    <button
+                      onClick={handleBackToCourseFromQuiz}
+                      style={{
+                        background: '#0284c7',
+                        color: '#fff',
+                        padding: '8px 16px',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        fontSize: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                      }}
+                    >
+                      ◀️ वापस कोर्स पर जाएँ
+                    </button>
+                    <span style={{ marginLeft: '15px', color: '#64748b', fontSize: '14px', fontWeight: '500' }}>
+                      (असेसमेंट मोड एक्टिवेटेड - कोर्स साइडबार सुरक्षित लॉक कर दिया गया है)
+                    </span>
+                  </div>
+                )}
+
+                {/* 📹 वीडियो प्लेयर कंपोनेंट: इसमें हम एक कस्टम प्रॉप भेज रहे हैं जो अंदर की क्विज़ स्टेट को पैरेंट तक लाएगा */}
+                <VideoPlayer 
+                  onQuizStateChange={(isActive) => {
+                    console.log("[DASHBOARD] क्विज़ मोड की लाइव स्थिति:", isActive);
+                    setIsQuizActiveInPlayer(isActive);
+                  }}
+                />
+              </div>
             )}
 
             {currentView === 'tests' && (
-              // 📝 सेफ कंटेनर में टेस्ट लिस्ट पेज रेंडर किया
               <TestListPage 
                 user={user} 
                 onBack={() => setCurrentView('training')} 
@@ -47,7 +99,6 @@ export default function Dashboard({ user, setUser, onLogout, onProfileClick }) {
             )}
 
             {currentView === 'stats' && (
-              // 📊 असेसमेंट परफॉर्मेंस डैशबोर्ड मोड
               <div style={{ padding: '30px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', maxWidth: '900px', margin: '0 auto 20px auto' }}>
                   <div>
