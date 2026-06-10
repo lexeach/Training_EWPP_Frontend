@@ -1,6 +1,5 @@
-// frontend/src/context/ProgressContext.jsx
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from 'react';
 import Loader from '../components/Loader'; // 👈 लोडर इम्पोर्ट किया
 
 export const ProgressContext = createContext();
@@ -12,11 +11,12 @@ export const ProgressProvider = ({ children, user, setUser }) => {
   const [currentUnlockedVideo, setCurrentUnlockedVideo] = useState(user?.currentUnlockedVideo || "m1s1-v1");
   const [loading, setLoading] = useState(true);
   
-  // 🔒 स्क्रीन लॉक करने के लिए नई स्टेट
+  // 🔒 स्क्रीन लॉक करने के लिए स्टेट
   const [globalLoading, setGlobalLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
 
-  const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
+  // 🎯 आपका बेस बैकएंड यूआरएल (राउट प्रिफिक्स के अनुसार जांच लें)
+  const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api/training";
 
   useEffect(() => {
     const fetchModules = async () => {
@@ -52,14 +52,16 @@ export const ProgressProvider = ({ children, user, setUser }) => {
     }
   }, [user?.token]);
 
-  // 1️⃣ वीडियो प्रोग्रेस अपडेट (यहाँ स्क्रीन लॉक करेंगे)
+  // 1️⃣ वीडियो प्रोग्रेस अपडेट
   const updateProgressOnBackend = async (videoId) => {
     try {
       setLoadingMessage("आपकी प्रोग्रेस सेव की जा रही है...");
       setGlobalLoading(true); // 🔒 स्क्रीन लॉक
 
-      const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      const response = await axios.post(`${BACKEND_URL}/progress/update`, { videoId }, config);
+      const config = { headers: { Authorization: `Bearer ${user?.token || localStorage.getItem('token')}` } };
+      
+      // ✨ फिक्स राउट: /progress/update से बदलकर /update-progress किया
+      const response = await axios.post(`${BACKEND_URL}/update-progress`, { videoId }, config);
       
       setCompletedVideos(response.data.completedVideos);
       setCurrentUnlockedVideo(response.data.currentUnlockedVideo);
@@ -88,7 +90,9 @@ export const ProgressProvider = ({ children, user, setUser }) => {
       const config = {
         headers: { Authorization: `Bearer ${user?.token || localStorage.getItem('token')}` }
       };
-      const response = await axios.post(`${BACKEND_URL}/quiz/submit`, { 
+
+      // ✨ फिक्स राउट: /quiz/submit से बदलकर /submit-quiz किया ताकि यह बैकएंड कंट्रोलर को हिट करे
+      const response = await axios.post(`${BACKEND_URL}/submit-quiz`, { 
         videoId, 
         answers: answersArray 
       }, config);
@@ -101,7 +105,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
           ...user,
           completedVideos: response.data.completedVideos,
           currentUnlockedVideo: response.data.currentUnlockedVideo,
-          quizResults: response.data.quizResults
+          quizResults: response.data.quizResults // 💾 अब अपडेटेड एरे फ्रंटएंड स्टेट में सिंक होगी
         };
         setUser(updatedUser);
         localStorage.setItem('partnerUser', JSON.stringify(updatedUser));
