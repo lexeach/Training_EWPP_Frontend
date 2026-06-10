@@ -1,6 +1,5 @@
-// frontend/src/context/ProgressContext.jsx
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios'; // ✨ फिक्स: इसे वापस 'axios' पैकेज से इम्पोर्ट कर दिया गया है
+import axios from 'axios'; // ✅ परफेक्ट इम्पोर्ट
 import Loader from '../components/Loader'; 
 
 export const ProgressContext = createContext();
@@ -8,7 +7,11 @@ export const ProgressContext = createContext();
 export const ProgressProvider = ({ children, user, setUser }) => {
   const [modules, setModules] = useState([]);
   const [currentVideo, setCurrentVideo] = useState(null);
-  const [completedVideos, setCompletedVideos] = useState(user?.completedVideos || []);
+  
+  // 🛡️ सेफगार्ड स्टेट्स: सुनिश्चित करें कि एरे हमेशा डिफ़ॉल्ट रूप से खाली एरे ही रहें
+  const [completedVideos, setCompletedVideos] = useState(() => {
+    return Array.isArray(user?.completedVideos) ? user.completedVideos : [];
+  });
   const [currentUnlockedVideo, setCurrentUnlockedVideo] = useState(user?.currentUnlockedVideo || "m1s1-v1");
   const [loading, setLoading] = useState(true);
   
@@ -16,28 +19,45 @@ export const ProgressProvider = ({ children, user, setUser }) => {
   const [globalLoading, setGlobalLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
 
-  // 🎯 बेस यूआरएल (बैकएंड कंट्रोलर राउट्स के अनुसार)
+  // 🎯 बेस यूआरएल
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api/training";
+
+  // यूजर स्टेट बदलने पर प्रोग्रेस स्टेट्स को सिंक में रखना
+  useEffect(() => {
+    if (user) {
+      if (Array.isArray(user.completedVideos)) setCompletedVideos(user.completedVideos);
+      if (user.currentUnlockedVideo) setCurrentUnlockedVideo(user.currentUnlockedVideo);
+    }
+  }, [user]);
 
   useEffect(() => {
     const fetchModules = async () => {
       try {
-        const config = {
-          headers: { Authorization: `Bearer ${user?.token || localStorage.getItem('token')}` }
-        };
+        const token = user?.token || localStorage.getItem('token');
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+
+        const config = { headers: { Authorization: `Bearer ${token}` } };
         const response = await axios.get(`${BACKEND_URL}/modules`, config);
-        if (response.data && response.data.length > 0) {
+        
+        if (response.data && Array.isArray(response.data) && response.data.length > 0) {
           setModules(response.data);
+          
+          // सेफ तरीके से पहला वीडियो ढूंढना बिना क्रैश किए
           const firstModule = response.data[0];
           let firstVideo = null;
-          if (firstModule.subModules && firstModule.subModules.length > 0) {
+          
+          if (firstModule?.subModules && Array.isArray(firstModule.subModules) && firstModule.subModules.length > 0) {
             const firstSubModule = firstModule.subModules[0];
-            if (firstSubModule.videos && firstSubModule.videos.length > 0) {
+            if (firstSubModule?.videos && Array.isArray(firstSubModule.videos) && firstSubModule.videos.length > 0) {
               firstVideo = firstSubModule.videos[0];
             }
-          } else if (firstModule.videos && firstModule.videos.length > 0) {
+          } else if (firstModule?.videos && Array.isArray(firstModule.videos) && firstModule.videos.length > 0) {
             firstVideo = firstModule.videos[0];
           }
+          
           if (!currentVideo && firstVideo) {
             setCurrentVideo(firstVideo);
           }
@@ -48,7 +68,8 @@ export const ProgressProvider = ({ children, user, setUser }) => {
         setLoading(false);
       }
     };
-    if (user?.token) {
+
+    if (user?.token || localStorage.getItem('token')) {
       fetchModules();
     }
   }, [user?.token]);
@@ -59,22 +80,30 @@ export const ProgressProvider = ({ children, user, setUser }) => {
       setLoadingMessage("आपकी प्रोग्रेस सेव की जा रही है...");
       setGlobalLoading(true); 
 
-      const config = { headers: { Authorization: `Bearer ${user?.token || localStorage.getItem('token')}` } };
+      const token = user?.token || localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
       
-      // ✅ राउट फिक्स: /update-progress
       const response = await axios.post(`${BACKEND_URL}/update-progress`, { videoId }, config);
       
-      setCompletedVideos(response.data.completedVideos);
-      setCurrentUnlockedVideo(response.data.currentUnlockedVideo);
-      
-      const updatedUser = { 
-        ...user, 
-        completedVideos: response.data.completedVideos, 
-        currentUnlockedVideo: response.data.currentUnlockedVideo 
-      };
-      setUser(updatedUser);
-      localStorage.setItem('partnerUser', JSON.stringify(updatedUser));
-      return response.data;
+      if (response.data) {
+        const newCompleted = Array.isArray(response.data.completedVideos) ? response.data.completedVideos : [];
+        const newUnlocked = response.data.currentUnlockedVideo || "m1s1-v1";
+
+        setCompletedVideos(newCompleted);
+        setCurrentUnlockedVideo(newUnlocked);
+        
+        setUser(prevUser => {
+          const updated = { 
+            ...prevUser, 
+            completedVideos: newCompleted, 
+            currentUnlockedVideo: newUnlocked 
+          };
+          localStorage.setItem('partnerUser', JSON.stringify(updated));
+          return updated;
+        });
+        
+        return response.data;
+      }
     } catch (error) {
       console.error("प्रोग्रेस अपडेट करने में फेल:", error);
     } finally {
@@ -88,28 +117,33 @@ export const ProgressProvider = ({ children, user, setUser }) => {
       setLoadingMessage("आपके उत्तरों की जांच की जा रही है, कृपया रुकें...");
       setGlobalLoading(true); 
 
-      const config = {
-        headers: { Authorization: `Bearer ${user?.token || localStorage.getItem('token')}` }
-      };
+      const token = user?.token || localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      // ✅ राउट फिक्स: /submit-quiz
       const response = await axios.post(`${BACKEND_URL}/submit-quiz`, { 
         videoId, 
         answers: answersArray 
       }, config);
 
       if (response.data) {
-        setCompletedVideos(response.data.completedVideos);
-        setCurrentUnlockedVideo(response.data.currentUnlockedVideo);
+        const newCompleted = Array.isArray(response.data.completedVideos) ? response.data.completedVideos : [];
+        const newUnlocked = response.data.currentUnlockedVideo || "m1s1-v1";
+        const newQuizResults = Array.isArray(response.data.quizResults) ? response.data.quizResults : [];
+
+        setCompletedVideos(newCompleted);
+        setCurrentUnlockedVideo(newUnlocked);
         
-        const updatedUser = {
-          ...user,
-          completedVideos: response.data.completedVideos,
-          currentUnlockedVideo: response.data.currentUnlockedVideo,
-          quizResults: response.data.quizResults 
-        };
-        setUser(updatedUser);
-        localStorage.setItem('partnerUser', JSON.stringify(updatedUser));
+        setUser(prevUser => {
+          const updated = {
+            ...prevUser,
+            completedVideos: newCompleted,
+            currentUnlockedVideo: newUnlocked,
+            quizResults: newQuizResults 
+          };
+          localStorage.setItem('partnerUser', JSON.stringify(updated));
+          return updated;
+        });
+        
         return response.data;
       }
     } catch (error) {
@@ -123,7 +157,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
 
   return (
     <ProgressContext.Provider value={{
-      modules,
+      modules: modules || [],
       currentVideo,
       setCurrentVideo,
       completedVideos,
