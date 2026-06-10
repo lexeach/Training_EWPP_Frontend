@@ -96,7 +96,7 @@ export default function VideoPlayer() {
     }
   };
 
-  // 2️⃣ जैसे ही यूजर प्रोग्रेस बार पर आगे (Fast-Forward) कूदने की कोशिश करेगा, यह तुरंत ब्लॉक करेगा
+  // 2️⃣ जैसे ही यूजर प्रोग्रेस बार पर आगे (Fast-Forward) कूदने की कोशिश करेगा, यह तुरंत BLOCK करेगा
   const handleSeeking = () => {
     const video = videoRef.current;
     if (!video) return;
@@ -142,16 +142,15 @@ export default function VideoPlayer() {
   const handleVideoEnded = async () => {
     alert("🎉 आपने यह वीडियो पूरा देख लिया है!");
     
-    // 🛑 बदलाव: अब वीडियो समाप्त होने पर ऑटोमैटिक टेस्ट (setShowQuiz) ओपन नहीं होगा।
-    // प्रोग्रेस को चुपचाप डेटाबेस में भेज देंगे ताकि यह टेस्ट लिस्ट में एक्टिवेट हो जाए।
+    // 🟢 प्रोग्रेस को डेटाबेस में सेव करें ताकि वीडियो Completed मार्क हो जाए और 'Test List' में भी दिखने लगे
     const result = await updateProgressOnBackend(currentVideo.videoId);
     
     if (result) {
-      // अगर वीडियो में कोई क्विज़ नहीं है, तो सीधे अगला वीडियो लोड होगा
+      // अगर वीडियो में कोई क्विज़ नहीं है, तो डायरेक्ट अगला वीडियो लोड करें
       if (!currentVideo.quiz || !Array.isArray(currentVideo.quiz) || currentVideo.quiz.length === 0) {
         handleNextVideoSwitch();
       } else {
-        alert("📝 इस वीडियो का टेस्ट 'ऑनलाइन टेस्ट लिस्ट' में जोड़ दिया गया है। आप वहाँ से इसे कभी भी दे सकते हैं!");
+        alert("📝 इस वीडियो का टेस्ट 'ऑनलाइन टेस्ट लिस्ट' में जोड़ दिया गया है। आप वहाँ से इसे कभी भी मैनुअली दे सकते हैं!");
       }
     }
   };
@@ -168,11 +167,16 @@ export default function VideoPlayer() {
 
     const answersArray = quizData.map((_, index) => selectedAnswers[index]);
     
+    // बैकएंड पर क्विज़ सबमिट करें (यह डेटाबेस में पास/फेल और स्कोर स्टोर करता है)
     const result = await submitQuizOnBackend(currentVideo.videoId, answersArray);
     
     if (result) {
       if (result.passed) {
         alert(`🎉 बधाई हो! आप टेस्ट पास कर चुके हैं। स्कोर: ${result.score}/${result.totalQuestions}`);
+        
+        // 🎯 सुधार: टेस्ट पास होने के बाद भी प्रोग्रेस को दोबारा सिंक करें ताकि डेटाबेस में प्रोग्रेस लॉक हो जाए
+        await updateProgressOnBackend(currentVideo.videoId);
+        
         setShowQuiz(false);
         setSelectedAnswers({});
         handleNextVideoSwitch(); // टेस्ट पास होने पर ही अगला वीडियो लोड होगा
@@ -297,7 +301,7 @@ export default function VideoPlayer() {
         {/* 📺 स्मार्ट हाइब्रिड वीडियो प्लेयर कंटेनर */}
         <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: '6px', overflow: 'hidden', position: 'relative' }}>
           {isGoogleDrive ? (
-            /* 🟢 गूगल驱动 वीडियो के लिए आईफ्रेम (Iframe) प्लेयर */
+            /* 🟢 गूगल ड्राइव वीडियो के लिए आईफ्रेम (Iframe) प्लेयर */
             <iframe
               src={getEmbedUrl(currentVideo.url)}
               style={{ width: '100%', height: '100%', border: 'none' }}
@@ -375,7 +379,7 @@ export default function VideoPlayer() {
         )}
 
         <div style={{ marginTop: '15px', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '12px', borderRadius: '6px', color: '#166534', fontSize: '13px' }}>
-          💡 <strong>नियम:</strong> ट्रेनिंग को क्रमानुसार डिज़ाइन किया गया है। वीडियो पूरा होने के बाद आप 'ऑनलाइन टेस्ट लिस्ट' में जाकर इसका टेस्ट (Assessment) मैनुअली दे सकते हैं। उसे पास करने के बाद ही अगला चैप्टर अनलॉक होगा।
+          💡 <strong>नियम:</strong> ट्रेनिंग को क्रमानुसार डिज़ाइन किया गया है। वीडियो पूरा होने के बाद आप 'ऑनलाइन टेस्ट लिस्ट' में जाकर इसका test (Assessment) मैनुअली दे सकते हैं। उसे पास करने के बाद ही अगला चैप्टर अनलॉक होगा।
         </div>
       </div>
     </div>
