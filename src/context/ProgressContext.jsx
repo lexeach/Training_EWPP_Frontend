@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios'; // ✅ परफेक्ट इम्पोर्ट
+import axios from 'axios'; 
 import Loader from '../components/Loader'; 
 
 export const ProgressContext = createContext();
@@ -19,8 +19,8 @@ export const ProgressProvider = ({ children, user, setUser }) => {
   const [globalLoading, setGlobalLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
 
-  // 🎯 बेस यूआरएल
-  const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api/training";
+  // 🎯 यूआरएल फिक्स: 404 एरर हटाने के लिए इसे केवल /api पर रखा गया है
+  const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
 
   // यूजर स्टेट बदलने पर प्रोग्रेस स्टेट्स को सिंक में रखना
   useEffect(() => {
@@ -40,6 +40,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
         }
 
         const config = { headers: { Authorization: `Bearer ${token}` } };
+        // 🚀 हिट करेगा: /api/modules
         const response = await axios.get(`${BACKEND_URL}/modules`, config);
         
         if (response.data && Array.isArray(response.data) && response.data.length > 0) {
@@ -83,6 +84,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
       const token = user?.token || localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
       
+      // 🚀 हिट करेगा: /api/update-progress
       const response = await axios.post(`${BACKEND_URL}/update-progress`, { videoId }, config);
       
       if (response.data) {
@@ -120,6 +122,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
       const token = user?.token || localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
+      // 🚀 हिट करेगा: /api/submit-quiz
       const response = await axios.post(`${BACKEND_URL}/submit-quiz`, { 
         videoId, 
         answers: answersArray 
