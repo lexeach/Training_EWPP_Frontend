@@ -1,6 +1,7 @@
+// frontend/src/context/ProgressContext.jsx
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'react';
-import Loader from '../components/Loader'; // 👈 लोडर इम्पोर्ट किया
+import axios from 'axios'; // ✨ फिक्स: इसे वापस 'axios' पैकेज से इम्पोर्ट कर दिया गया है
+import Loader from '../components/Loader'; 
 
 export const ProgressContext = createContext();
 
@@ -15,7 +16,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
   const [globalLoading, setGlobalLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
 
-  // 🎯 आपका बेस बैकएंड यूआरएल (राउट प्रिफिक्स के अनुसार जांच लें)
+  // 🎯 बेस यूआरएल (बैकएंड कंट्रोलर राउट्स के अनुसार)
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api/training";
 
   useEffect(() => {
@@ -56,11 +57,11 @@ export const ProgressProvider = ({ children, user, setUser }) => {
   const updateProgressOnBackend = async (videoId) => {
     try {
       setLoadingMessage("आपकी प्रोग्रेस सेव की जा रही है...");
-      setGlobalLoading(true); // 🔒 स्क्रीन लॉक
+      setGlobalLoading(true); 
 
       const config = { headers: { Authorization: `Bearer ${user?.token || localStorage.getItem('token')}` } };
       
-      // ✨ फिक्स राउट: /progress/update से बदलकर /update-progress किया
+      // ✅ राउट फिक्स: /update-progress
       const response = await axios.post(`${BACKEND_URL}/update-progress`, { videoId }, config);
       
       setCompletedVideos(response.data.completedVideos);
@@ -77,21 +78,21 @@ export const ProgressProvider = ({ children, user, setUser }) => {
     } catch (error) {
       console.error("प्रोग्रेस अपडेट करने में फेल:", error);
     } finally {
-      setGlobalLoading(false); // 🔓 स्क्रीन अनलॉक
+      setGlobalLoading(false); 
     }
   };
 
-  // 2️⃣ क्विज़ सबमिशन (यहाँ स्क्रीन लॉक करेंगे ताकि डुप्लीकेट सबमिट न हो)
+  // 2️⃣ क्विज़ सबमिशन
   const submitQuizOnBackend = async (videoId, answersArray) => {
     try {
       setLoadingMessage("आपके उत्तरों की जांच की जा रही है, कृपया रुकें...");
-      setGlobalLoading(true); // 🔒 स्क्रीन लॉक
+      setGlobalLoading(true); 
 
       const config = {
         headers: { Authorization: `Bearer ${user?.token || localStorage.getItem('token')}` }
       };
 
-      // ✨ फिक्स राउट: /quiz/submit से बदलकर /submit-quiz किया ताकि यह बैकएंड कंट्रोलर को हिट करे
+      // ✅ राउट फिक्स: /submit-quiz
       const response = await axios.post(`${BACKEND_URL}/submit-quiz`, { 
         videoId, 
         answers: answersArray 
@@ -105,7 +106,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
           ...user,
           completedVideos: response.data.completedVideos,
           currentUnlockedVideo: response.data.currentUnlockedVideo,
-          quizResults: response.data.quizResults // 💾 अब अपडेटेड एरे फ्रंटएंड स्टेट में सिंक होगी
+          quizResults: response.data.quizResults 
         };
         setUser(updatedUser);
         localStorage.setItem('partnerUser', JSON.stringify(updatedUser));
@@ -116,7 +117,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
       alert(error.response?.data?.message || "क्विज़ सबमिट करने में कोई समस्या आई।");
       return null;
     } finally {
-      setGlobalLoading(false); // 🔓 स्क्रीन अनलॉक
+      setGlobalLoading(false); 
     }
   };
 
@@ -131,7 +132,6 @@ export const ProgressProvider = ({ children, user, setUser }) => {
       submitQuizOnBackend,
       loading
     }}>
-      {/* 🎯 अगर globalLoading सच है, तो स्क्रीन लॉक करने वाला कंपोनेंट ऊपर रेंडर होगा */}
       {globalLoading && <Loader message={loadingMessage} />}
       {children}
     </ProgressContext.Provider>
