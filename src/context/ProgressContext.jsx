@@ -8,7 +8,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
   const [modules, setModules] = useState([]);
   const [currentVideo, setCurrentVideo] = useState(null);
   
-  // 🛡️ सेफगार्ड स्टेट्स: सुनिश्चित करें कि एरे हमेशा डिफ़ॉल्ट रूप से खाली एरे ही रहें
+  // 🛡️ सेफगार्ड स्टेट्स
   const [completedVideos, setCompletedVideos] = useState(() => {
     return Array.isArray(user?.completedVideos) ? user.completedVideos : [];
   });
@@ -19,10 +19,10 @@ export const ProgressProvider = ({ children, user, setUser }) => {
   const [globalLoading, setGlobalLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
 
-  // 🎯 यूआरएल फिक्स: 404 एरर हटाने के लिए इसे केवल /api पर रखा गया है
+  // 🎯 बेस यूआरएल
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
 
-  // यूजर स्टेट बदलने पर प्रोग्रेस स्टेट्स को सिंक में रखना
+  // यूज़र स्टेट चेंज होने पर प्रोग्रेस को सिंक रखना
   useEffect(() => {
     if (user) {
       if (Array.isArray(user.completedVideos)) setCompletedVideos(user.completedVideos);
@@ -40,13 +40,12 @@ export const ProgressProvider = ({ children, user, setUser }) => {
         }
 
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        // 🚀 हिट करेगा: /api/modules
+        // मुख्य रूप से /api/modules पर ट्रम्प करेगा
         const response = await axios.get(`${BACKEND_URL}/modules`, config);
         
         if (response.data && Array.isArray(response.data) && response.data.length > 0) {
           setModules(response.data);
           
-          // सेफ तरीके से पहला वीडियो ढूंढना बिना क्रैश किए
           const firstModule = response.data[0];
           let firstVideo = null;
           
@@ -84,7 +83,6 @@ export const ProgressProvider = ({ children, user, setUser }) => {
       const token = user?.token || localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
       
-      // 🚀 हिट करेगा: /api/update-progress
       const response = await axios.post(`${BACKEND_URL}/update-progress`, { videoId }, config);
       
       if (response.data) {
@@ -113,7 +111,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
     }
   };
 
-  // 2️⃣ क्विज़ सबमिशन
+  // 2️⃣ क्विज़ सबमिशन (स्मार्ट राउट फॉलबैक के साथ फिक्स्ड 🚀)
   const submitQuizOnBackend = async (videoId, answersArray) => {
     try {
       setLoadingMessage("आपके उत्तरों की जांच की जा रही है, कृपया रुकें...");
@@ -121,14 +119,23 @@ export const ProgressProvider = ({ children, user, setUser }) => {
 
       const token = user?.token || localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
+      const payload = { videoId, answers: answersArray };
 
-      // 🚀 हिट करेगा: /api/submit-quiz
-      const response = await axios.post(`${BACKEND_URL}/submit-quiz`, { 
-        videoId, 
-        answers: answersArray 
-      }, config);
+      let response;
+      try {
+        // ट्राय 1: पहले सीधे /api/submit-quiz पर भेजकर देखते हैं
+        response = await axios.post(`${BACKEND_URL}/submit-quiz`, payload, config);
+      } catch (err) {
+        // ट्राय 2: अगर पहला रूट 404 मारता है, तो तुरंत बैकअप रूट /api/training/submit-quiz पर भेजेगा!
+        if (err.response && err.response.status === 404) {
+          console.log("[Route Redirect] /api/submit-quiz नहीं मिला, बैकअप राउट आज़मा रहे हैं...");
+          response = await axios.post(`${BACKEND_URL}/training/submit-quiz`, payload, config);
+        } else {
+          throw err; // अगर 404 के अलावा कोई और एरर है तो उसे कैच में भेजें
+        }
+      }
 
-      if (response.data) {
+      if (response && response.data) {
         const newCompleted = Array.isArray(response.data.completedVideos) ? response.data.completedVideos : [];
         const newUnlocked = response.data.currentUnlockedVideo || "m1s1-v1";
         const newQuizResults = Array.isArray(response.data.quizResults) ? response.data.quizResults : [];
