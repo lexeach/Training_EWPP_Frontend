@@ -1,4 +1,5 @@
 // frontend/src/App.jsx
+import LandscapeAlert from './components/LandscapeAlert'; // 🎯 अलर्ट इम्पोर्ट किया गया
 import React, { useState, useEffect } from 'react';
 import Login from './views/Login';
 import Dashboard from './views/Dashboard';
@@ -114,44 +115,55 @@ function App() {
     window.history.pushState({}, document.title, "/"); // URL बार को वापस साफ़ करके '/' कर देगा
   };
 
-  // 🎯 कंडीशन 1: पासवर्ड रीसेट स्क्रीन
-  if (resetToken) {
-    return <ResetPassword token={resetToken} onComplete={handleResetComplete} />;
-  }
+  // 🛡️ ग्लोबल रेंडर फंक्शन: यह सुनिश्चित करता है कि LandscapeAlert हमेशा सबसे ऊपर चले, चाहे कोई भी स्क्रीन लोड हो
+  const renderMainContent = () => {
+    // 🎯 कंडीशन 1: पासवर्ड रीसेट स्क्रीन
+    if (resetToken) {
+      return <ResetPassword token={resetToken} onComplete={handleResetComplete} />;
+    }
 
-  // 🎯 CONDITION 2: अगर एडमिन ने ब्राउज़र में /admin टाइप किया है
-  if (isAdminRoute) {
-    return <AdminPanel onBack={handleAdminBack} />;
-  }
+    // 🎯 CONDITION 2: अगर एडमिन ने ब्राउज़र में /admin टाइप किया है
+    if (isAdminRoute) {
+      return <AdminPanel onBack={handleAdminBack} />;
+    }
 
-  // 🎯 CONDITION 3: सामान्य लॉगिन/डैशबोर्ड फ्लो
- return (
+    // 🎯 CONDITION 3: सामान्य लॉगिन/डैशबोर्ड फ्लो
+    return (
+      <>
+        {!user ? (
+          <Login onLoginSuccess={handleLoginSuccess} />
+        ) : (!user.isPaid || currentView === 'profile') ? ( 
+          <Profile 
+            user={user} 
+            setUser={handleUserUpdateFromProfile} 
+            onBack={() => {
+              if (user && user.isPaid) {
+                setCurrentView('dashboard');
+              } else {
+                alert("🛑 ट्रेनिंग शुरू करने के लिए कृपया पहले FEES का भुगतान करें।");
+              }
+            }} 
+          />
+        ) : (
+          // 🟢 यहाँ सीधे Dashboard लोड होगा और हम 'currentView' को नीचे भेज देंगे
+          <Dashboard 
+            user={user} 
+            setUser={setUser} 
+            onLogout={handleLogout} 
+            onProfileClick={() => setCurrentView('profile')} 
+          />
+        )}
+      </>
+    );
+  };
+
+  return (
     <>
-      {!user ? (
-        <Login onLoginSuccess={handleLoginSuccess} />
-      ) : (!user.isPaid || currentView === 'profile') ? ( 
-        <Profile 
-          user={user} 
-          setUser={handleUserUpdateFromProfile} 
-          onBack={() => {
-            if (user && user.isPaid) {
-              setCurrentView('dashboard');
-            } else {
-              alert("🛑 ट्रेनिंग शुरू करने के लिए कृपया पहले FEES का भुगतान करें।");
-            }
-          }} 
-        />
-      ) : (
-        // 🟢 यहाँ सीधे Dashboard लोड होगा और हम 'currentView' को नीचे भेज देंगे
-        <Dashboard 
-          user={user} 
-          setUser={setUser} 
-          onLogout={handleLogout} 
-          onProfileClick={() => setCurrentView('profile')} 
-          // 💡 बटन क्लिक होने पर हम पैरेंट की स्टेट बदलने के बजाय सीधे हैंडलर भेज रहे हैं
-         
-        />
-      )}
+      {/* ✨ मास्टर फिक्स: यह अलर्ट हर स्क्रीन (Login, Dashboard, Admin) पर मोबाइल पोर्ट्रेट को ब्लॉक करेगा */}
+      <LandscapeAlert />
+      
+      {/* बाकी का डायनामिक कंटेंट रेंडर होगा */}
+      {renderMainContent()}
     </>
   );
 }
