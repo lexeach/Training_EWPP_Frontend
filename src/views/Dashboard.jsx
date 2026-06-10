@@ -1,53 +1,66 @@
-// frontend/src/views/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import VideoPlayer from '../components/VideoPlayer';
 import TestListPage from '../views/TestListPage'; 
 import { ProgressProvider } from '../context/ProgressContext';
-import axios from 'axios'; // 🟢 डेटाबेस से सिंक करने के लिए
+import axios from 'axios'; 
 
 export default function Dashboard({ user: initialUser, setUser: setGlobalUser, onLogout, onProfileClick }) {
-  // 🎯 इनिशियल यूजर प्रॉप्स से आएगा, लेकिन री-डेप्लॉय/रिफ्रेश होने पर डेटाबेस से लाइव सिंक होगा
   const [user, setUser] = useState(initialUser);
   const [currentView, setCurrentView] = useState('training');
   const [isQuizActiveInPlayer, setIsQuizActiveInPlayer] = useState(false);
+  // 🟢 मास्टर फिक्स: लोडिंग स्टेट जोड़ी
+  const [isLoading, setIsLoading] = useState(true); 
 
-  // 🔄 [DATABASE AUTO-SYNC]: पेज लोड या री-डेप्लॉय होने पर डेटाबेस से ताज़ा मार्क्स खींचना
- useEffect(() => {
-  const fetchLatestUserData = async () => {
-    const token = localStorage.getItem('token');
-    console.log("DEBUG: टोकन मौजूद है?", token ? "हाँ" : "नहीं");
-    
-    if (!token) return;
-
-    try {
-      const response = await axios.get('https://training-ewpp-backend.onrender.com/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      console.log("DEBUG: एपीआई रिस्पॉन्स:", response.data);
-      // ... बाकी लॉजिक ...
-    } catch (err) {
-      console.log("DEBUG: एपीआई एरर डिटेल्स:", err.response || err);
-    }
-  };
-  fetchLatestUserData();
-}, []);
+  // 🔄 [DATABASE AUTO-SYNC]: पेज लोड होने पर डेटाबेस से ताज़ा डेटा खींचना
+  useEffect(() => {
+    const fetchLatestUserData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
   
-  // डेटाबेस से लाइव सिंक होने वाले रिज़ल्ट्स
+      try {
+        const response = await axios.get('https://training-ewpp-backend.onrender.com/api/auth/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (response.data && response.data.success) {
+          // 🟢 लेटेस्ट डेटा सेट किया
+          setUser(response.data.user);
+          if (setGlobalUser) setGlobalUser(response.data.user);
+        }
+      } catch (err) {
+        console.error("Dashboard API Error:", err);
+      } finally {
+        // 🟢 डेटा आते ही लोडिंग बंद
+        setIsLoading(false);
+      }
+    };
+    fetchLatestUserData();
+  }, []);
+  
+  // 🟢 अगर डेटा लोड हो रहा है, तो लोडिंग स्क्रीन दिखाएं (ताकि पुराना डेटा न दिखे)
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f172a', color: '#fff' }}>
+        <h2>Loading your data...</h2>
+      </div>
+    );
+  }
+
+  // डेटाबेस से लाइव सिंक होने वाले रिज़ल्ट्स
   const results = user?.quizResults || [];
 
-  // ◀️ वापस कोर्स पर जाने का कॉमन फंक्शन
   const handleBackToCourseFromQuiz = () => {
     setIsQuizActiveInPlayer(false);
-    // लोकल स्टोरेज में अगर कोई पुराना फ्लैग बचा हो तो उसे साफ करें
     localStorage.removeItem('autoStartQuiz');
     window.location.reload(); 
   };
 
-  // 🎯 [बुलेटप्रूफ फिक्स] वीडियो प्लेयर से आने वाले सिग्नल को पैरेंट की स्टेट में सिंक करना
   const handleQuizStateChange = (isActive) => {
-    console.log("📢 Dashboard: Quiz Active Status changed to ->", isActive);
     setIsQuizActiveInPlayer(isActive);
   };
 
@@ -55,33 +68,27 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
     <ProgressProvider user={user} setUser={setUser}>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', fontFamily: 'system-ui, sans-serif' }}>
         
-        {/* 1. TOP BAR */}
         <Header 
           user={user} 
           onLogout={onLogout} 
           onProfileClick={onProfileClick} 
           onTestListClick={() => { setIsQuizActiveInPlayer(false); setCurrentView('tests'); }} 
           onHomeClick={() => { setIsQuizActiveInPlayer(false); setCurrentView('training'); }}
-          isQuizActive={isQuizActiveInPlayer}       // 🟢 हेडर को स्टेट भेजी
-          onBackFromQuiz={handleBackToCourseFromQuiz} // 🟢 हेडर को फंक्शन भेजा
+          isQuizActive={isQuizActiveInPlayer}
+          onBackFromQuiz={handleBackToCourseFromQuiz}
         />
         
-        {/* MAIN BODY CONTAINER */}
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           
-          {/* 2. LEFT SIDEBAR (क्विज़ एक्टिव होने पर साइडबार छुपेगा) */}
           {currentView !== 'tests' && !isQuizActiveInPlayer && <Sidebar />}
           
-          {/* 3. RIGHT MAIN FRAME */}
           <div style={{ flex: 1, backgroundColor: '#f8fafc', overflowY: 'auto' }}>
             
             {currentView === 'training' && (
               <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                {/* 📹 वीडियो प्लेयर (स्टेट चेंज और क्विज़ सबमिट सक्सेस दोनों को यहाँ हैंडल किया) */}
                 <VideoPlayer 
                   onQuizStateChange={handleQuizStateChange} 
                   onQuizSubmitSuccess={(updatedQuizResults) => {
-                    // 🟢 जैसे ही टेस्ट सबमिट होगा, तुरंत बिना पेज रिफ्रेश किए मार्क्स स्टेट में लाइव सिंक हो जाएँगे
                     const updatedUser = { ...user, quizResults: updatedQuizResults };
                     setUser(updatedUser);
                     if (setGlobalUser) setGlobalUser(updatedUser);
@@ -114,7 +121,6 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
                 </div>
               </div>
             )}
-
           </div>
         </div>
       </div>
