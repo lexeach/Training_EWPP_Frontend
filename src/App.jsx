@@ -47,6 +47,32 @@ function App() {
     }
   }, []);
 
+  // 🚀 [मास्टर फिक्स] हार्ड रिफ्रेश या री-डेप्लॉय होने पर डेटाबेस से लाइव यूज़र डेटा सिंक करना
+  useEffect(() => {
+    const fetchFreshUserOnLoad = async () => {
+      if (!user) return;
+      try {
+        const token = localStorage.getItem('token'); // लॉगइन के समय सेव किया गया JWT टोकन
+        if (token) {
+          console.log("[APP] डेटाबेस से ताजा प्रोफाइल डेटा सिंक किया जा रहा है...");
+          const res = await axios.get('https://training-ewpp-backend.onrender.com/api/auth/me', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (res.data && res.data.success && res.data.user) {
+            const freshUserData = res.data.user;
+            setUser(freshUserData);
+            localStorage.setItem('partnerUser', JSON.stringify(freshUserData));
+          }
+        }
+      } catch (err) {
+        console.error("[APP ERROR] ताज़ा यूज़र डेटा सिंक फेल:", err.message);
+      }
+    };
+
+    fetchFreshUserOnLoad();
+  }, []); // खाली एरे ताकि यह सिर्फ ऐप के इनिशियल लोड/रिफ्रेश पर एक बार चले
+
   // 🚀 2. लाइव पेमेंट स्टेटस सिंक (केवल शुरुआती फ्रेश लोड पर बैकएंड से चेक करेगा)
   useEffect(() => {
     const checkLivePaymentStatus = async () => {
@@ -159,10 +185,10 @@ function App() {
 
   return (
     <>
-      {/* ✨ मास्टर फिक्स: यह अलर्ट हर स्क्रीन (Login, Dashboard, Admin) पर मोबाइल पोर्ट्रेट को ब्लॉक करेगा */}
+       {/* ✨ मास्टर फिक्स: यह अलर्ट हर स्क्रीन (Login, Dashboard, Admin) पर मोबाइल पोर्ट्रेट को ब्लॉक करेगा */}
       <LandscapeAlert />
       
-      {/* बाकी का डायनामिक कंटेंट रेंडर होगा */}
+       {/* बाकी का डायनामिक कंटेंट रेंडर होगा */}
       {renderMainContent()}
     </>
   );
