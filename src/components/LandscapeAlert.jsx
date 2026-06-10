@@ -29,89 +29,87 @@ const LandscapeAlert = () => {
   if (!showPopup) return null;
 
   return (
-    // 🌌 1. प्योर इनलाइन ब्लैक ओवरले - यह पूरी स्क्रीन को घेरेगा और सब कुछ इसके पीछे धुंधला रहेगा
+    // 🌌 फुल स्क्रीन डार्क ओवरले - बिना किसी फ्लेक्सबॉक्स के परफेक्ट एब्सोल्यूट सेंटरिंग
     <div style={{
       position: 'fixed',
       top: 0,
       left: 0,
-      width: '100vw',
-      height: '100vh',
+      width: '100%',
+      height: '100%',
       backgroundColor: 'rgba(15, 23, 42, 0.95)', // गहरा डार्क बैकग्राउंड
-      zIndex: 9999999, // ब्रह्मांड का सबसे बड़ा Z-Index ताकि कोई इसके ऊपर न आ सके
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px',
-      boxSizing: 'border-box'
+      zIndex: 99999999, // सबसे ऊपर रहेगा
+      boxSizing: 'border-box',
+      overflow: 'hidden'
     }}>
       
-      {/* 🪙 2. मुख्य अलर्ट बॉक्स (पॉपअप विंडो) - यह स्क्रीन के ठीक बीचों-बीच रहेगा */}
+      {/* 🪙 मुख्य अलर्ट बॉक्स (पॉपअप विंडो) - प्योर गणितीय सेंटर पोजीशनिंग */}
       <div style={{
-        backgroundColor: '#1e293b', // slate-800
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)', // 🎯 ये लाइन इसे स्क्रीन के डेड-सेंटर में रखेगी
+        backgroundColor: '#1e293b', 
         color: '#ffffff',
         borderRadius: '16px',
-        padding: '24px',
-        maxWidth: '320px',
-        width: '100%',
-        border: '1px solid #334155', // slate-700
+        padding: '24px 20px',
+        maxWidth: '290px',
+        width: 'calc(100% - 40px)',
+        border: '1px solid #334155', 
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
         textAlign: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
         boxSizing: 'border-box'
       }}>
         
-        {/* 🔄 एनिमेटेड रोटेशन आइकॉन */}
+        {/* 🔄 रोटेशन आइकॉन */}
         <div style={{
           backgroundColor: 'rgba(234, 179, 8, 0.1)',
           padding: '12px',
           borderRadius: '50%',
-          marginBottom: '16px',
+          width: '40px',
+          height: '40px',
+          margin: '0 auto 16px auto',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '40px', height: '40px', color: '#eab308' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '32px', height: '32px', color: '#eab308' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <rect x="5" y="2" width="14" height="20" rx="2" transform="rotate(90 12 12)" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 5h.01M12 19h.01" />
           </svg>
         </div>
 
-        {/* 📝 टेक्स्ट */}
-        <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px', color: '#eab308', letterSpacing: '0.5px' }}>
+        {/* 📝 हेडिंग */}
+        <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 10px 0', color: '#eab308' }}>
           लैंडस्केप मोड की सलाह! 🔄
         </h3>
         
-        <p style={{ fontSize: '14px', color: '#cbd5e1', lineHeight: '1.5', marginBottom: '20px', margin: '0 0 20px 0' }}>
-          बेहतर व्यू, वीडियो देखने और ऑनलाइन टेस्ट को अच्छे से देने के लिए अपने मोबाइल को <strong>Landscape (घुमाकर)</strong> इस्तेमाल करना सबसे बेस्ट रहता है।
+        {/* 📝 पैराग्राफ */}
+        <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.5', margin: '0 0 20px 0' }}>
+          बेहतर व्यू, वीडियो देखने और ऑनलाइन टेस्ट को अच्छे से देने के लिए अपने मोबाइल को <strong>Landscape (घुमाकर)</strong> इस्तेमाल करें।
         </p>
 
-        {/* 🤝 ठीक है बटन */}
+        {/* 🤝 क्लोज बटन */}
         <button
           onClick={() => setShowPopup(false)}
           style={{
             width: '100%',
-            backgroundColor: '#eab308', // yellow-500
-            color: '#0f172a', // slate-900
+            backgroundColor: '#eab308', 
+            color: '#0f172a', 
             fontWeight: 'bold',
-            padding: '12px 20px',
+            padding: '12px',
             borderRadius: '12px',
             border: 'none',
             cursor: 'pointer',
             fontSize: '14px',
-            transition: 'background-color 0.2s',
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
           }}
-          onMouseOver={(e) => e.target.style.backgroundColor = '#ca8a04'}
-          onMouseOut={(e) => e.target.style.backgroundColor = '#eab308'}
         >
           ठीक है, समझ गया 👍
         </button>
 
-        <span style={{ fontSize: '10px', color: '#94a3b8', marginTop: '12px' }}>
+        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '12px' }}>
           (सुनिश्चित करें कि फोन का Auto-Rotate ऑन हो)
-        </span>
+        </div>
       </div>
     </div>
   );
