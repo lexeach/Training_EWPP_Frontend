@@ -20,18 +20,25 @@ export default function Login({ onLoginSuccess }) {
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
 
   // 🟢 1. लॉगिन हैंडलर
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await axios.post(`${BACKEND_URL}/auth/login`, { email, password });
-      onLoginSuccess(res.data.user || res.data);
-    } catch (err) {
-      alert(err.response?.data?.message || "लॉगिन फेल! कृपया डिटेल्स जांचें।");
-    } finally {
-      setLoading(false);
+  // 🟢 1. लॉगिन हैंडलर (Update this part in Login.jsx)
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  try {
+    const res = await axios.post(`${BACKEND_URL}/auth/login`, { email, password });
+    
+    // 🚀 [FIX] टोकन को स्टोर करें (यह लाइन आपके कोड में मिसिंग थी!)
+    if (res.data && res.data.token) {
+      localStorage.setItem('token', res.data.token);
     }
-  };
+    
+    onLoginSuccess(res.data.user || res.data);
+  } catch (err) {
+    alert(err.response?.data?.message || "लॉगिन फेल! कृपया डिटेल्स जांचें।");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // 🟡 2. फॉरगॉट पासवर्ड हैंडलर
   const handleForgotPassword = async (e) => {
