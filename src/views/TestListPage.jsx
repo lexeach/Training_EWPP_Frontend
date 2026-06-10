@@ -1,4 +1,4 @@
-// frontend/src/pages/TestListPage.jsx
+// frontend/src/views/TestListPage.jsx
 import React, { useContext } from 'react';
 import { ProgressContext } from '../context/ProgressContext';
 
@@ -9,7 +9,7 @@ export default function TestListPage({ user, onBack }) {
   const modules = Array.isArray(context.modules) ? context.modules : [];
   const setCurrentVideo = context.setCurrentVideo || (() => {});
 
-  // 🛡️ पूरी तरह सुरक्षित वीडियो लिस्ट फ़िल्टरिंग (हर लेवल पर सुरक्षा जाँच)
+  // 🛡️ पूरी तरह सुरक्षित वीडियो लिस्ट फ़िल्टरिंग
   let watchedVideosList = [];
   try {
     const allVideos = [];
@@ -40,6 +40,9 @@ export default function TestListPage({ user, onBack }) {
 
   const handleStartTest = (video) => {
     if (video && typeof setCurrentVideo === 'function') {
+      // 💡 वीडियो प्लेयर को सिग्नल देने के लिए लोकलस्टोरेज में फ्लैग सेट करें
+      localStorage.setItem('autoStartQuiz', 'true'); 
+      
       setCurrentVideo(video);
       if (typeof onBack === 'function') onBack();
     }
@@ -79,11 +82,13 @@ export default function TestListPage({ user, onBack }) {
                 
                 // सुरक्षित तरीके से टेस्ट का रिजल्ट ढूंढना
                 const userResults = Array.isArray(user?.quizResults) ? user.quizResults : [];
+                
+                // चेक करें कि क्या यूजर ने इस वीडियो का टेस्ट पास किया हुआ है
                 const testResult = userResults.find(r => {
-         return r && 
-         String(r.videoId).trim() === String(video.videoId).trim() && 
-         (r.passed === true || r.passed === 'true');
-         });
+                  return r && 
+                         String(r.videoId).trim() === String(video.videoId).trim() && 
+                         (r.passed === true || r.passed === 'true');
+                });
 
                 return (
                   <tr key={video.videoId} style={{ borderBottom: '1px solid #e2e8f0' }}>
@@ -102,16 +107,23 @@ export default function TestListPage({ user, onBack }) {
                       )}
                     </td>
                     <td style={{ padding: '14px' }}>
-                      {testResult ? (
-                        <button disabled style={{ backgroundColor: '#f1f5f9', color: '#94a3b8', border: 'none', padding: '6px 14px', borderRadius: '4px', cursor: 'not-allowed' }}>कम्पलीटेड</button>
-                      ) : (
-                        <button 
-                          onClick={() => handleStartTest(video)}
-                          style={{ backgroundColor: '#0284c7', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                        >
-                          Give Test 📝
-                        </button>
-                      )}
+                      {/* 🟢 जादुई बदलाव: बटन अब हमेशा चालू (Available) रहेगा ताकि यूजर जब चाहे Retest दे सके */}
+                      <button 
+                        onClick={() => handleStartTest(video)}
+                        style={{ 
+                          backgroundColor: testResult ? '#10b981' : '#0284c7', // पास होने पर बटन ग्रीन दिखेगा, वरना ब्लू
+                          color: '#fff', 
+                          border: 'none', 
+                          padding: '6px 14px', 
+                          borderRadius: '4px', 
+                          cursor: 'pointer', 
+                          fontWeight: 'bold',
+                          fontSize: '13px',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                        }}
+                      >
+                        {testResult ? 'Retest 🔄' : 'Give Test 📝'}
+                      </button>
                     </td>
                   </tr>
                 );
