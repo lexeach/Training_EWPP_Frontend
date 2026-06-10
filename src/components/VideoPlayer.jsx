@@ -3,7 +3,7 @@ import React, { useContext, useRef, useState, useEffect } from 'react';
 import { ProgressContext } from '../context/ProgressContext';
 
 export default function VideoPlayer() {
-  // 🎯 submitQuizOnBackend को कांटेक्स्ट से निकाला
+  // 🎯 कांटेक्स्ट से डेटा निकाला
   const { 
     currentVideo, 
     updateProgressOnBackend, 
@@ -31,6 +31,9 @@ export default function VideoPlayer() {
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [quizData, setQuizData] = useState([]);
 
+  // ⏳ वीडियो बफ़रिंग / लोडिंग स्टेट
+  const [isBuffering, setIsBuffering] = useState(false);
+
   // 🔄 जैसे ही नया वीडियो लोड होगा, सभी ट्रैक्स, टाइमर और क्विज़ स्टेट्स रीसेट कर देंगे
   useEffect(() => {
     setMaxTimeWatched(0);
@@ -39,7 +42,20 @@ export default function VideoPlayer() {
     setShowQuiz(false);
     setSelectedAnswers({});
     setQuizData([]);
+    setIsBuffering(false);
   }, [currentVideo?.videoId]);
+
+  // 📝 🟢 नया लॉजिक: टेस्ट लिस्ट से मैनुअल "Give Test" बटन क्लिक होने पर डायरेक्ट क्विज़ मोड ऑन करना
+  useEffect(() => {
+    const shouldStartQuiz = localStorage.getItem('autoStartQuiz');
+    
+    if (shouldStartQuiz === 'true' && currentVideo?.quiz && Array.isArray(currentVideo.quiz) && currentVideo.quiz.length > 0) {
+      localStorage.removeItem('autoStartQuiz'); // फ्लैग साफ़ करें
+      setQuizData(currentVideo.quiz);
+      setShowQuiz(true); // सीधे टेस्ट स्क्रीन ओपन करें
+      console.log("📝 टेस्ट लिस्ट से मैनुअली टेस्ट रिक्वेस्ट आई है, क्विज़ मोड ऑन किया गया।");
+    }
+  }, [currentVideo]);
 
   // ⏳ गूगल ड्राइव वीडियो के लिए बैकग्राउंड टाइमर लॉजिक
   useEffect(() => {
@@ -126,22 +142,22 @@ export default function VideoPlayer() {
   const handleVideoEnded = async () => {
     alert("🎉 आपने यह वीडियो पूरा देख लिया है!");
     
-    // 🎯 चेक करें कि क्या इस वीडियो में सवाल (Quiz) मौजूद हैं
-    if (currentVideo.quiz && Array.isArray(currentVideo.quiz) && currentVideo.quiz.length > 0) {
-      setQuizData(currentVideo.quiz);
-      setShowQuiz(true); // 👈 प्लेयर छुपाकर तुरंत टेस्ट स्क्रीन ऑन करें
-    } else {
-      // अगर इस वीडियो में क्विज़ नहीं है, तो पुराना डायरेक्ट प्रोग्रेस अनलॉक चलाएं
-      const result = await updateProgressOnBackend(currentVideo.videoId);
-      if (result) {
+    // 🛑 बदलाव: अब वीडियो समाप्त होने पर ऑटोमैटिक टेस्ट (setShowQuiz) ओपन नहीं होगा।
+    // प्रोग्रेस को चुपचाप डेटाबेस में भेज देंगे ताकि यह टेस्ट लिस्ट में एक्टिवेट हो जाए।
+    const result = await updateProgressOnBackend(currentVideo.videoId);
+    
+    if (result) {
+      // अगर वीडियो में कोई क्विज़ नहीं है, तो सीधे अगला वीडियो लोड होगा
+      if (!currentVideo.quiz || !Array.isArray(currentVideo.quiz) || currentVideo.quiz.length === 0) {
         handleNextVideoSwitch();
+      } else {
+        alert("📝 इस वीडियो का टेस्ट 'ऑनलाइन टेस्ट लिस्ट' में जोड़ दिया गया है। आप वहाँ से इसे कभी भी दे सकते हैं!");
       }
     }
   };
 
   // 📝 टेस्ट/असेसमेंट सबमिट करने का हैंडलर
   const handleQuizSubmit = async () => {
-    // चेक करें कि क्या यूजर ने सभी प्रश्नों के उत्तर दे दिए हैं
     const totalQuestions = quizData.length;
     const answeredCount = Object.keys(selectedAnswers).length;
     
@@ -150,10 +166,8 @@ export default function VideoPlayer() {
       return;
     }
 
-    // ऑब्जेक्ट आंसर्स को इंडेक्स के अनुसार एरे फॉर्मेट में कनवर्ट करें
     const answersArray = quizData.map((_, index) => selectedAnswers[index]);
     
-    // बैकएंड एपीआई पर सबमिट करें
     const result = await submitQuizOnBackend(currentVideo.videoId, answersArray);
     
     if (result) {
@@ -164,7 +178,6 @@ export default function VideoPlayer() {
         handleNextVideoSwitch(); // टेस्ट पास होने पर ही अगला वीडियो लोड होगा
       } else {
         alert(`❌ आप टेस्ट पास नहीं कर पाए। स्कोर: ${result.score}/${result.totalQuestions}\n\nपास होने के लिए कम से कम 50% सही उत्तर आवश्यक हैं। कृपया वीडियो दोबारा देखें और फिर से प्रयास करें।`);
-        // टेस्ट रिसेट करें ताकि यूजर दोबारा प्रयास कर सके या वीडियो देख सके
         setShowQuiz(false);
         setSelectedAnswers({});
         setMaxTimeWatched(0); // वीडियो को दोबारा से देखने के लिए सेफगार्ड रिसेट
@@ -284,7 +297,7 @@ export default function VideoPlayer() {
         {/* 📺 स्मार्ट हाइब्रिड वीडियो प्लेयर कंटेनर */}
         <div style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: '6px', overflow: 'hidden', position: 'relative' }}>
           {isGoogleDrive ? (
-            /* 🟢 गूगल ड्राइव वीडियो के लिए आईफ्रेम (Iframe) प्लेयर */
+            /* 🟢 गूगल驱动 वीडियो के लिए आईफ्रेम (Iframe) प्लेयर */
             <iframe
               src={getEmbedUrl(currentVideo.url)}
               style={{ width: '100%', height: '100%', border: 'none' }}
@@ -293,19 +306,50 @@ export default function VideoPlayer() {
               title={currentVideo.title}
             ></iframe>
           ) : (
-            /* 🔵 सामान्य MP4 वीडियो के लिए नो-स्किप लॉजिक के साथ मजबूत प्लेयर */
-            <video
-              ref={videoRef}
-              key={currentVideo.videoId}
-              src={currentVideo.url}
-              controls
-              controlsList="nodownload"
-              onTimeUpdate={handleTimeUpdate}
-              onSeeking={handleSeeking}
-              onSeeked={handleSeeking}
-              onEnded={handleVideoEnded}
-              style={{ width: '100%', height: '100%' }}
-            />
+            /* 🔵 सामान्य MP4 वीडियो के लिए नो-स्किप और बफ़रिंग लॉजिक के साथ मजबूत प्लेयर */
+            <>
+              <video
+                ref={videoRef}
+                key={currentVideo.videoId}
+                src={currentVideo.url}
+                controls
+                controlsList="nodownload"
+                onTimeUpdate={handleTimeUpdate}
+                onSeeking={handleSeeking}
+                onSeeked={handleSeeking}
+                onEnded={handleVideoEnded}
+                onWaiting={() => setIsBuffering(true)}   // 🟡 बफ़रिंग शुरू हुई
+                onPlaying={() => setIsBuffering(false)}  // 🟢 बफ़रिंग ख़त्म हुई
+                onCanPlay={() => setIsBuffering(false)}  // 🟢 वीडियो प्ले होने के लिए रेडी
+                style={{ width: '100%', height: '100%' }}
+              />
+
+              {/* ⏳ बफ़रिंग स्पिनर यूआई (सिर्फ लोडिंग के समय दिखेगा) */}
+              {isBuffering && (
+                <div style={{
+                  position: 'absolute',
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  zIndex: 10
+                }}>
+                  <div style={{
+                    width: '50px',
+                    height: '50px',
+                    border: '5px solid #f3f3f3',
+                    borderTop: '5px solid #0284c7',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                  <p style={{ color: '#fff', marginTop: '12px', fontWeight: '600', fontSize: '15px' }}>
+                    वीडियो लोड हो रहा है, कृपया प्रतीक्षा करें...
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -324,14 +368,14 @@ export default function VideoPlayer() {
                 onClick={handleVideoEnded}
                 style={{ padding: '12px 24px', background: '#22c55e', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px', width: '100%', boxShadow: '0 4px 6px rgba(34, 197, 94, 0.2)', transition: 'background 0.2s' }}
               >
-                ✅ मैंने पूरा वीडियो देख लिया है - असेसमेंट शुरू करें
+                ✅ मैंने पूरा वीडियो देख लिया है - प्रोग्रेस सबमिट करें
               </button>
             )}
           </div>
         )}
 
         <div style={{ marginTop: '15px', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '12px', borderRadius: '6px', color: '#166534', fontSize: '13px' }}>
-          💡 <strong>नियम:</strong> ट्रेनिंग को क्रमानुसार डिज़ाइन किया गया है। वीडियो पूरा होते ही एक छोटा सा टेस्ट (Assessment) खुलेगा। उसे सही-सही पास करने के बाद ही अगला चैप्टर अनलॉक होगा।
+          💡 <strong>नियम:</strong> ट्रेनिंग को क्रमानुसार डिज़ाइन किया गया है। वीडियो पूरा होने के बाद आप 'ऑनलाइन टेस्ट लिस्ट' में जाकर इसका टेस्ट (Assessment) मैनुअली दे सकते हैं। उसे पास करने के बाद ही अगला चैप्टर अनलॉक होगा।
         </div>
       </div>
     </div>
