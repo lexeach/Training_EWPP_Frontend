@@ -14,29 +14,26 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
   const [isQuizActiveInPlayer, setIsQuizActiveInPlayer] = useState(false);
 
   // 🔄 [DATABASE AUTO-SYNC]: पेज लोड या री-डेप्लॉय होने पर डेटाबेस से ताज़ा मार्क्स खींचना
-  useEffect(() => {
-    const fetchLatestUserData = async () => {
-      try {
-        const token = localStorage.getItem('token'); // आपकी ऐप का ऑथेंटिकेशन टोकन
-        if (!token) return;
+ useEffect(() => {
+  const fetchLatestUserData = async () => {
+    const token = localStorage.getItem('token');
+    console.log("DEBUG: टोकन मौजूद है?", token ? "हाँ" : "नहीं");
+    
+    if (!token) return;
 
-        // 🎯 ध्यान दें: यहाँ अपनी प्रोफ़ाइल डेटा फ़ेच करने वाली API का सही एंडपॉइंट डालें (उदा: '/api/auth/me')
-        const response = await axios.get('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        if (response.data && response.data.user) {
-          setUser(response.data.user);
-          if (setGlobalUser) setGlobalUser(response.data.user); // पैरेंट/ग्लोबल स्टेट को भी सिंक किया
-        }
-      } catch (err) {
-        console.error("❌ डेटाबेस से यूज़र डेटा सिंक करने में एरर:", err);
-      }
-    };
-
-    fetchLatestUserData();
-  }, [setGlobalUser]);
-
+    try {
+      const response = await axios.get('https://training-ewpp-backend.onrender.com/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log("DEBUG: एपीआई रिस्पॉन्स:", response.data);
+      // ... बाकी लॉजिक ...
+    } catch (err) {
+      console.log("DEBUG: एपीआई एरर डिटेल्स:", err.response || err);
+    }
+  };
+  fetchLatestUserData();
+}, []);
+  
   // डेटाबेस से लाइव सिंक होने वाले रिज़ल्ट्स
   const results = user?.quizResults || [];
 
