@@ -16,9 +16,6 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
   // 📱 Mobile View Breakpoint (768px)
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  // पूरे पेज के स्क्रॉल को कंट्रोल करने के लिए Ref
-  const mainScrollContainerRef = useRef(null);
-
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
@@ -70,19 +67,25 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
     setIsQuizActiveInPlayer(isActive);
   };
 
-  // 🟢 लिस्ट में से वीडियो क्लिक करने पर पूरे पेज को वापस टॉप (वीडियो) पर ले जाने वाला फंक्शन
+  // 🟢 लिस्ट में से वीडियो क्लिक करने पर पूरे ब्राउज़र विंडो को वापस टॉप पर ले जाने वाला फंक्शन
   const handleVideoSelect = () => {
-    if (mainScrollContainerRef.current) {
-      mainScrollContainerRef.current.scrollTo({
-        top: 0,
-        behavior: 'smooth' // स्मूथ स्क्रॉल एनीमेशन
-      });
-    }
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth' // स्मूथ स्क्रॉल एनीमेशन
+    });
   };
 
   return (
     <ProgressProvider user={user} setUser={setUser}>
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', fontFamily: 'system-ui, sans-serif', backgroundColor: '#f8fafc' }}>
+      {/* 🟢 मुख्य आउटर डिब्बा: मोबाइल होने पर height: 'auto' और overflow: 'visible' किया ताकि पूरा पेज स्वाभाविक रूप से स्क्रॉल हो सके */}
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        height: isMobile ? 'auto' : '100vh', 
+        overflow: isMobile ? 'visible' : 'hidden', 
+        fontFamily: 'system-ui, sans-serif', 
+        backgroundColor: '#f8fafc' 
+      }}>
         
         {/* 1. TOP HEADER */}
         <Header 
@@ -95,26 +98,22 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
           onBackFromQuiz={handleBackToCourseFromQuiz}
         />
         
-        {/* 2. MAIN HUB (यह मुख्य डिब्बा अब मोबाइल पर नॉर्मल स्क्रॉल होगा, वीडियो फ्रीज नहीं रहेगा) */}
-        <div 
-          ref={mainScrollContainerRef} // 🟢 स्क्रॉल टॉप ट्रैक करने के लिए Ref यहाँ लगाया
-          style={{ 
+        {/* 2. MAIN HUB (यह डिब्बा भी मोबाइल पर स्क्रॉल को ब्लॉक नहीं करेगा) */}
+        <div style={{ 
             display: 'flex', 
             flexDirection: isMobile ? 'column' : 'row', 
-            flex: 1, 
-            overflowY: 'auto', // 🟢 मोबाइल पर पूरा हब एक साथ नॉर्मल स्क्रॉल होगा
-            overflowX: 'hidden'
-          }}
-        >
+            flex: isMobile ? 'none' : 1, 
+            overflow: isMobile ? 'visible' : 'hidden'
+        }}>
           
           {currentView === 'training' && (
             <>
-              {/* 📹 VIDEO PLAYER (नॉर्मल फ्लो में रहेगा, स्क्रॉल करने पर ऊपर चला जाएगा) */}
+              {/* 📹 VIDEO PLAYER (बिल्कुल नॉर्मल फ्लो में, स्क्रॉल करने पर ऊपर चला जाएगा) */}
               <div style={{ 
                   width: '100%',
                   flexShrink: 0,
                   background: '#000',
-                  position: 'relative' // 🟢 कोई sticky या fixed नहीं, बिल्कुल नॉर्मल
+                  position: 'relative'
               }}>
                 <VideoPlayer 
                   onQuizStateChange={handleQuizStateChange} 
@@ -126,10 +125,10 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
                 />
               </div>
 
-              {/* 📑 MODULE LIST / SIDEBAR (वीडियो के ठीक नीचे सटकर दिखेगा) */}
+              {/* 📑 MODULE LIST / SIDEBAR */}
               {!isQuizActiveInPlayer && (
                 <div style={{ 
-                    width: '100%', // मोबाइल पर फुल विड्थ
+                    width: '100%', 
                     backgroundColor: '#ffffff',
                     borderTop: isMobile ? '1px solid #e2e8f0' : 'none',
                     borderRight: isMobile ? 'none' : '1px solid #e2e8f0'
