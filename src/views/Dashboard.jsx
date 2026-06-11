@@ -79,7 +79,7 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
 
   return (
     <ProgressProvider user={user} setUser={setUser}>
-      {/* 🟢 1. मुख्य आउटर डिब्बा - डेस्कटॉप पर 100vh फिक्स, मोबाइल पर आज़ाद (auto) */}
+      {/* मुख्य आउटर डिब्बा - डेस्कटॉप पर 100vh, मोबाइल पर आज़ाद (auto) */}
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
@@ -100,26 +100,43 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
           onBackFromQuiz={handleBackToCourseFromQuiz}
         />
         
-        {/* 🟢 2. MAIN HUB - डेस्कटॉप पर flex: 1 और overflow: hidden रहेगा ताकि लेआउट न टूटे */}
+        {/* MAIN HUB */}
         <div style={{ 
             display: 'flex', 
             flexDirection: isMobile ? 'column' : 'row', 
             flex: isMobile ? 'none' : 1, 
-            height: isMobile ? 'auto' : 'calc(100% - 56px)', // हेडर की हाइट हटाकर बाकी बची पूरी जगह डेस्कटॉप पर लेगा
-            overflow: isMobile ? 'visible' : 'hidden'
+            height: isMobile ? 'auto' : 'calc(100vh - 56px)', 
+            overflow: isMobile ? 'visible' : 'hidden',
+            width: '100%'
         }}>
           
           {currentView === 'training' && (
             <>
-              {/* 📹 VIDEO PLAYER (डेस्कटॉप पर दाईं ओर फ्लेक्स लेगा, मोबाइल पर ऊपर रहेगा) */}
+              {/* 📑 MODULE LIST / SIDEBAR (डेस्कटॉप पर बाईं ओर रहेगा order: 1 की वजह से) */}
+              {!isQuizActiveInPlayer && (
+                <div style={{ 
+                    width: isMobile ? '100%' : '320px', 
+                    order: isMobile ? 2 : 1, // डेस्कटॉप पर पहले नंबर पर आएगा
+                    height: isMobile ? 'auto' : '100%', 
+                    overflowY: isMobile ? 'visible' : 'auto', 
+                    backgroundColor: '#ffffff',
+                    borderTop: isMobile ? '1px solid #e2e8f0' : 'none',
+                    borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
+                    flexShrink: 0 // 🟢 डेस्कटॉप पर प्लेयर इसे दबाकर छोटा नहीं कर पाएगा
+                }}>
+                  <Sidebar onVideoSelect={handleVideoSelect} isMobile={isMobile} />
+                </div>
+              )}
+
+              {/* 📹 VIDEO PLAYER (डेस्कटॉप पर दाईं ओर रहेगा order: 2 की वजह से) */}
               <div style={{ 
                   flex: isMobile ? '0 0 auto' : '1', 
-                  width: '100%',
-                  order: isMobile ? 1 : 2, 
+                  width: isMobile ? '100%' : 'auto', // 🟢 डेस्कटॉप पर विड्थ 'auto' रखी ताकि यह बची हुई जगह ले, साइडबार को बाहर न धकेले
+                  order: isMobile ? 1 : 2, // डेस्कटॉप पर दूसरे नंबर पर आएगा
                   background: '#000',
                   position: 'relative',
                   height: isMobile ? 'auto' : '100%',
-                  overflowY: isMobile ? 'visible' : 'auto' // डेस्कटॉप पर अगर कंटेंट बड़ा हो तो प्लेयर के अंदर स्क्रॉल हो सके
+                  overflowY: isMobile ? 'visible' : 'auto'
               }}>
                 <VideoPlayer 
                   onQuizStateChange={handleQuizStateChange} 
@@ -130,22 +147,6 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
                   }}
                 />
               </div>
-
-              {/* 📑 MODULE LIST / SIDEBAR (डेस्कटॉप पर बाईं ओर 320px फिक्स स्क्रॉल, मोबाइल पर नीचे फुल विड्थ) */}
-              {!isQuizActiveInPlayer && (
-                <div style={{ 
-                    width: isMobile ? '100%' : '320px', 
-                    order: isMobile ? 2 : 1,
-                    height: isMobile ? 'auto' : '100%', // डेस्कटॉप पर पैरेंट की पूरी हाइट लेगा
-                    overflowY: isMobile ? 'visible' : 'auto', // डेस्कटॉप पर खुद का स्क्रॉल एक्टिव रहेगा
-                    backgroundColor: '#ffffff',
-                    borderTop: isMobile ? '1px solid #e2e8f0' : 'none',
-                    borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
-                    flexShrink: 0
-                }}>
-                  <Sidebar onVideoSelect={handleVideoSelect} isMobile={isMobile} />
-                </div>
-              )}
             </>
           )}
 
