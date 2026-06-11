@@ -1,5 +1,5 @@
 // frontend/src/App.jsx
-//import LandscapeAlert from './components/LandscapeAlert'; // 🎯 अलर्ट इम्पोर्ट किया गया
+import LandscapeAlert from './components/LandscapeAlert'; // 🎯 अलर्ट इम्पोर्ट किया गया
 import React, { useState, useEffect } from 'react';
 import Login from './views/Login';
 import Dashboard from './views/Dashboard';
@@ -186,7 +186,7 @@ function App() {
   return (
     <>
        {/* ✨ मास्टर फिक्स: यह अलर्ट हर स्क्रीन (Login, Dashboard, Admin) पर मोबाइल पोर्ट्रेट को ब्लॉक करेगा */}
-      //<LandscapeAlert />
+      <LandscapeAlert />
       
        {/* बाकी का डायनामिक कंटेंट रेंडर होगा */}
       {renderMainContent()}
