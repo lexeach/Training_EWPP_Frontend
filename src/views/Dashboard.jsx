@@ -16,8 +16,8 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
   // 📱 Mobile View Breakpoint (768px)
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  // स्क्रॉल को कंट्रोल करने के लिए Ref
-  const scrollContainerRef = useRef(null);
+  // पूरे पेज के स्क्रॉल को कंट्रोल करने के लिए Ref
+  const mainScrollContainerRef = useRef(null);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -70,12 +70,12 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
     setIsQuizActiveInPlayer(isActive);
   };
 
-  // 🟢 वीडियो क्लिक करने पर केवल नीचे वाले स्क्रॉलिंग हिस्से को टॉप पर ले जाने वाला फंक्शन
+  // 🟢 लिस्ट में से वीडियो क्लिक करने पर पूरे पेज को वापस टॉप (वीडियो) पर ले जाने वाला फंक्शन
   const handleVideoSelect = () => {
-    if (isMobile && scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({
+    if (mainScrollContainerRef.current) {
+      mainScrollContainerRef.current.scrollTo({
         top: 0,
-        behavior: 'smooth'
+        behavior: 'smooth' // स्मूथ स्क्रॉल एनीमेशन
       });
     }
   };
@@ -95,23 +95,26 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
           onBackFromQuiz={handleBackToCourseFromQuiz}
         />
         
-        {/* 2. MAIN HUB (Flex container) */}
-        <div style={{ 
+        {/* 2. MAIN HUB (यह मुख्य डिब्बा अब मोबाइल पर नॉर्मल स्क्रॉल होगा, वीडियो फ्रीज नहीं रहेगा) */}
+        <div 
+          ref={mainScrollContainerRef} // 🟢 स्क्रॉल टॉप ट्रैक करने के लिए Ref यहाँ लगाया
+          style={{ 
             display: 'flex', 
             flexDirection: isMobile ? 'column' : 'row', 
             flex: 1, 
-            overflow: 'hidden' // मुख्य पैरेंट स्क्रॉल को ब्लॉक रखेगा ताकि लेआउट न टूटे
-        }}>
+            overflowY: 'auto', // 🟢 मोबाइल पर पूरा हब एक साथ नॉर्मल स्क्रॉल होगा
+            overflowX: 'hidden'
+          }}
+        >
           
           {currentView === 'training' && (
             <>
-              {/* 📹 FIXED VIDEO PLAYER (मोबाइल पर 100% फ्रीज, बिना किसी स्क्रॉलिंग इशू के) */}
+              {/* 📹 VIDEO PLAYER (नॉर्मल फ्लो में रहेगा, स्क्रॉल करने पर ऊपर चला जाएगा) */}
               <div style={{ 
                   width: '100%',
                   flexShrink: 0,
                   background: '#000',
-                  zIndex: 20,
-                  boxShadow: isMobile ? '0 4px 10px rgba(0,0,0,0.15)' : 'none'
+                  position: 'relative' // 🟢 कोई sticky या fixed नहीं, बिल्कुल नॉर्मल
               }}>
                 <VideoPlayer 
                   onQuizStateChange={handleQuizStateChange} 
@@ -123,20 +126,14 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
                 />
               </div>
 
-              {/* 📑 MODULE LIST / SIDEBAR (केवल यह हिस्सा स्क्रॉल होगा, वीडियो ऊपर स्थिर रहेगा) */}
+              {/* 📑 MODULE LIST / SIDEBAR (वीडियो के ठीक नीचे सटकर दिखेगा) */}
               {!isQuizActiveInPlayer && (
-                <div 
-                  ref={scrollContainerRef} // 🟢 स्क्रॉल को कंट्रोल करने के लिए यहाँ Ref लगाया
-                  style={{ 
-                    flex: 1,
-                    width: isMobile ? '100%' : '320px', 
-                    overflowY: 'auto', // 🟢 स्क्रॉल केवल इस डिब्बे के अंदर एक्टिव रहेगा
-                    WebkitOverflowScrolling: 'touch', // iOS पर स्मूथ स्क्रॉलिंग के लिए
+                <div style={{ 
+                    width: '100%', // मोबाइल पर फुल विड्थ
                     backgroundColor: '#ffffff',
                     borderTop: isMobile ? '1px solid #e2e8f0' : 'none',
                     borderRight: isMobile ? 'none' : '1px solid #e2e8f0'
-                  }}
-                >
+                }}>
                   <Sidebar onVideoSelect={handleVideoSelect} isMobile={isMobile} />
                 </div>
               )}
@@ -145,7 +142,7 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
 
           {/* बाकी व्यूज के लिए (Tests / Stats) */}
           {currentView !== 'training' && (
-            <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '15px' : '30px' }}>
+            <div style={{ flex: 1, padding: isMobile ? '15px' : '30px' }}>
               {currentView === 'tests' && (
                 <TestListPage user={user} onBack={() => setCurrentView('training')} />
               )}
@@ -157,7 +154,7 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
                     <button onClick={() => setCurrentView('training')} style={{ background: '#0284c7', color: '#fff', padding: '8px 14px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>◀️ वापस</button>
                   </div>
                   <div style={{ background: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '15px', overflowX: 'auto' }}>
-                    {results.length === 0 ? <p>कोई टेस्ट记录 नहीं मिला।</p> : 
+                    {results.length === 0 ? <p>कोई टेस्ट रिकॉर्ड नहीं मिला।</p> : 
                       <table style={{ width: '100%', textAlign: 'left', minWidth: '400px' }}>
                         <thead><tr><th>वीडियो कोड</th><th>स्कोर</th><th>कुल प्रश्न</th><th>स्थिति</th></tr></thead>
                         <tbody>
