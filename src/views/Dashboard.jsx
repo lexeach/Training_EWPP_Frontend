@@ -13,7 +13,7 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
   const [isQuizActiveInPlayer, setIsQuizActiveInPlayer] = useState(false);
   const [isLoading, setIsLoading] = useState(true); 
   
-  // 📱 Mobile responsive state track करने के लिए
+  // 📱 Mobile View Breakpoint (768px)
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
@@ -69,8 +69,9 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
 
   return (
     <ProgressProvider user={user} setUser={setUser}>
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', fontFamily: 'system-ui, sans-serif', backgroundColor: '#f8fafc' }}>
         
+        {/* 1. TOP HEADER */}
         <Header 
           user={user} 
           onLogout={onLogout} 
@@ -81,35 +82,24 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
           onBackFromQuiz={handleBackToCourseFromQuiz}
         />
         
-        {/* 📱 YouTube-like Responsive Container */}
+        {/* 2. MAIN HUB (Flex container) */}
         <div style={{ 
             display: 'flex', 
             flexDirection: isMobile ? 'column' : 'row', 
             flex: 1, 
-            overflow: 'hidden' 
+            overflow: isMobile ? 'auto' : 'hidden' // मोबाइल पर पूरा बॉडी स्क्रॉल हो सके, डेस्कटॉप पर फिक्स रहे
         }}>
           
-          {/* 1. Sidebar (Mobile पर Video के नीचे, Desktop पर बाईं ओर) */}
-          {currentView === 'training' && !isQuizActiveInPlayer && (
-            <div style={{ 
-                width: isMobile ? '100%' : '300px', 
-                order: isMobile ? 2 : 1, // मोबाइल पर नीचे (2), डेस्कटॉप पर बाईं ओर (1)
-                overflowY: 'auto' 
-            }}>
-              <Sidebar />
-            </div>
-          )}
-          
-          {/* 2. Main Content (Video/Test/Stats) */}
-          <div style={{ 
-              flex: 1, 
-              backgroundColor: '#f8fafc', 
-              overflowY: 'auto',
-              order: isMobile ? 1 : 2 // मोबाइल पर ऊपर (1), डेस्कटॉप पर दाईं ओर (2)
-          }}>
-            
-            {currentView === 'training' && (
-              <div style={{ position: 'relative', width: '100%' }}>
+          {currentView === 'training' && (
+            <>
+              {/* 📹 VIDEO PLAYER (मोबाइल पर सबसे ऊपर, डेस्कटॉप पर दाईं ओर) */}
+              <div style={{ 
+                  flex: isMobile ? '0 0 auto' : '1', 
+                  width: '100%',
+                  order: isMobile ? 1 : 2, // मोबाइल पर पहला स्थान
+                  position: 'relative',
+                  background: '#000' // वीडियो के पीछे ब्लैक बैकग्राउंड अच्छा लगेगा
+              }}>
                 <VideoPlayer 
                   onQuizStateChange={handleQuizStateChange} 
                   onQuizSubmitSuccess={(updatedQuizResults) => {
@@ -119,33 +109,53 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
                   }}
                 />
               </div>
-            )}
 
-            {currentView === 'tests' && (
-              <TestListPage user={user} onBack={() => setCurrentView('training')} />
-            )}
+              {/* 📑 MODULE LIST / SIDEBAR (मोबाइल पर वीडियो के नीचे, डेस्कटॉप पर बाईं ओर) */}
+              {!isQuizActiveInPlayer && (
+                <div style={{ 
+                    width: isMobile ? '100%' : '300px', 
+                    order: isMobile ? 2 : 1, // मोबाइल पर दूसरा स्थान
+                    overflowY: isMobile ? 'visible' : 'auto', // मोबाइल पर पैरेंट स्क्रॉल संभालेगा
+                    backgroundColor: '#ffffff',
+                    borderTop: isMobile ? '2px solid #e2e8f0' : 'none',
+                    borderRight: isMobile ? 'none' : '1px solid #e2e8f0'
+                }}>
+                  <Sidebar />
+                </div>
+              )}
+            </>
+          )}
 
-            {currentView === 'stats' && (
-              <div style={{ padding: '30px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', maxWidth: '900px', margin: '0 auto 20px auto' }}>
-                  <h2 style={{ fontSize: '22px', fontWeight: '700' }}>📊 आपका ट्रेनिंग परफॉरमेंस डैशबोर्ड</h2>
-                  <button onClick={() => setCurrentView('training')} style={{ background: '#0284c7', color: '#fff', padding: '10px 18px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>◀️ वापस कोर्स पर जाएँ</button>
+          {/* बाकी व्यूज के लिए (Tests / Stats) */}
+          {currentView !== 'training' && (
+            <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '15px' : '30px', order: 2 }}>
+              {currentView === 'tests' && (
+                <TestListPage user={user} onBack={() => setCurrentView('training')} />
+              )}
+
+              {currentView === 'stats' && (
+                <div style={{ width: '100%' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', maxWidth: '900px', margin: '0 auto 20px auto' }}>
+                    <h2 style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '700' }}>📊 आपका परफॉरमेंस</h2>
+                    <button onClick={() => setCurrentView('training')} style={{ background: '#0284c7', color: '#fff', padding: '8px 14px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>◀️ वापस</button>
+                  </div>
+                  <div style={{ background: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '15px', overflowX: 'auto' }}>
+                    {results.length === 0 ? <p>कोई टेस्ट रिकॉर्ड नहीं मिला।</p> : 
+                      <table style={{ width: '100%', textAlign: 'left', minWidth: '400px' }}>
+                        <thead><tr><th>वीडियो कोड</th><th>स्कोर</th><th>कुल प्रश्न</th><th>स्थिति</th></tr></thead>
+                        <tbody>
+                          {results.map((res, i) => (
+                            <tr key={i}><td>{res.videoId}</td><td>{res.score}</td><td>{res.totalQuestions}</td><td>{res.passed ? 'PASSED ✅' : 'FAILED ❌'}</td></tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    }
+                  </div>
                 </div>
-                <div style={{ background: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0', maxWidth: '900px', margin: '0 auto', padding: '20px' }}>
-                  {results.length === 0 ? <p>कोई टेस्ट रिकॉर्ड नहीं मिला।</p> : 
-                    <table style={{ width: '100%', textAlign: 'left' }}>
-                      <thead><tr><th>वीडियो कोड</th><th>स्कोर</th><th>कुल प्रश्न</th><th>स्थिति</th></tr></thead>
-                      <tbody>
-                        {results.map((res, i) => (
-                          <tr key={i}><td>{res.videoId}</td><td>{res.score}</td><td>{res.totalQuestions}</td><td>{res.passed ? 'PASSED ✅' : 'FAILED ❌'}</td></tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  }
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
     </ProgressProvider>
