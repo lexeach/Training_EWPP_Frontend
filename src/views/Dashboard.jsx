@@ -1,5 +1,5 @@
 // frontend/src/views/Dashboard.jsx
-import React, { useState, useEffect, useRef } from 'react'; // 🟢 useRef इम्पोर्ट किया
+import React, { useState, useEffect, useRef } from 'react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import VideoPlayer from '../components/VideoPlayer';
@@ -16,7 +16,7 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
   // 📱 Mobile View Breakpoint (768px)
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  // 🟢 स्क्रॉल कंटेनर को टारगेट करने के लिए Ref बनाया
+  // स्क्रॉल कंटेनर के लिए Ref
   const mainHubRef = useRef(null);
 
   useEffect(() => {
@@ -70,15 +70,21 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
     setIsQuizActiveInPlayer(isActive);
   };
 
-  // 🟢 वीडियो क्लिक होने पर टॉप पर स्क्रॉल करने वाला फंक्शन
+  // 🟢 100% वर्किंग स्क्रॉल टू टॉप फंक्शन (डबल प्रोटेक्शन के साथ)
   const handleVideoSelect = () => {
-    if (isMobile && mainHubRef.current) {
-      // मोबाइल पर मुख्य स्क्रॉलिंग बॉक्स को सबसे ऊपर (0) पर ले जाएगा
+    // तरीका 1: मुख्य कंटेनर को ऊपर स्क्रॉल करें
+    if (mainHubRef.current) {
       mainHubRef.current.scrollTo({
         top: 0,
-        behavior: 'smooth' // स्मूथ स्क्रॉलिंग अनुभव के लिए
+        behavior: 'smooth'
       });
     }
+    
+    // तरीका 2 (फेल-सेफ): अगर कंटेनर मिस हो तो पूरे ब्राउज़र विंडो को ऊपर फेंक दे
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   };
 
   return (
@@ -98,7 +104,7 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
         
         {/* 2. MAIN HUB (Flex container) */}
         <div 
-          ref={mainHubRef} // 🟢 कंटेनर को ट्रैक करने के लिए ref अटैच किया
+          ref={mainHubRef} 
           style={{ 
             display: 'flex', 
             flexDirection: isMobile ? 'column' : 'row', 
@@ -109,12 +115,14 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
           
           {currentView === 'training' && (
             <>
-              {/* 📹 VIDEO PLAYER (मोबाइल पर सबसे ऊपर, डेस्कटॉप पर दाईं ओर) */}
+              {/* 📹 VIDEO PLAYER (Sticky top on Mobile) */}
               <div style={{ 
                   flex: isMobile ? '0 0 auto' : '1', 
                   width: '100%',
                   order: isMobile ? 1 : 2, 
-                  position: 'relative',
+                  position: isMobile ? 'sticky' : 'relative',
+                  top: 0,
+                  zIndex: 10,
                   background: '#000' 
               }}>
                 <VideoPlayer 
@@ -130,15 +138,14 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
               {/* 📑 MODULE LIST / SIDEBAR */}
               {!isQuizActiveInPlayer && (
                 <div style={{ 
-                    width: isMobile ? '100%' : '300px', 
+                    width: isMobile ? '100%' : '320px', // 📱 मोबाइल पर 100% चौड़ाई ताकि कटिंग न हो
                     order: isMobile ? 2 : 1, 
                     overflowY: isMobile ? 'visible' : 'auto', 
                     backgroundColor: '#ffffff',
                     borderTop: isMobile ? '2px solid #e2e8f0' : 'none',
                     borderRight: isMobile ? 'none' : '1px solid #e2e8f0'
                 }}>
-                  {/* 🟢 साइडबार को फंक्शन प्रॉप के रूप में भेजा */}
-                  <Sidebar onVideoSelect={handleVideoSelect} />
+                  <Sidebar onVideoSelect={handleVideoSelect} isMobile={isMobile} />
                 </div>
               )}
             </>
