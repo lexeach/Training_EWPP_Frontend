@@ -26,10 +26,13 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
   useEffect(() => {
     const fetchLatestUserData = async () => {
       const token = localStorage.getItem('token');
+      // टोकन न मिलने पर तुरंत लोडिंग बंद न करें, एक छोटा सा चांस दें या चेक करें
       if (!token) {
+        console.log("DEBUG: टोकन मौजूद है? नहीं");
         setIsLoading(false);
         return;
       }
+      console.log("DEBUG: टोकन मौजूद है? हाँ");
       try {
         const response = await axios.get('https://training-ewpp-backend.onrender.com/api/auth/me', {
           headers: { Authorization: `Bearer ${token}` }
@@ -82,23 +85,25 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
           onBackFromQuiz={handleBackToCourseFromQuiz}
         />
         
-        {/* 2. MAIN HUB (Flex container) */}
+        {/* 2. MAIN HUB */}
         <div style={{ 
             display: 'flex', 
             flexDirection: isMobile ? 'column' : 'row', 
             flex: 1, 
-            overflow: isMobile ? 'auto' : 'hidden' // मोबाइल पर पूरा बॉडी स्क्रॉल हो सके, डेस्कटॉप पर फिक्स रहे
+            overflow: 'hidden' // पैरेंट को हमेशा हिडन रखेंगे ताकि केवल नीचे का हिस्सा स्क्रॉल हो
         }}>
           
           {currentView === 'training' && (
             <>
-              {/* 📹 VIDEO PLAYER (मोबाइल पर सबसे ऊपर, डेस्कटॉप पर दाईं ओर) */}
+              {/* 📹 VIDEO PLAYER (यूट्यूब की तरह मोबाइल पर हमेशा टॉप पर फ्रीज रहेगा) */}
               <div style={{ 
-                  flex: isMobile ? '0 0 auto' : '1', 
                   width: '100%',
-                  order: isMobile ? 1 : 2, // मोबाइल पर पहला स्थान
-                  position: 'relative',
-                  background: '#000' // वीडियो के पीछे ब्लैक बैकग्राउंड अच्छा लगेगा
+                  position: isMobile ? 'sticky' : 'relative',
+                  top: isMobile ? 0 : 'auto',
+                  zIndex: isMobile ? 50 : 'auto', // हेडर के नीचे और कंटेंट के ऊपर रखने के लिए
+                  background: '#000',
+                  boxShadow: isMobile ? '0 4px 6px -1px rgba(0,0,0,0.1)' : 'none',
+                  flexShrink: 0 // मोबाइल पर स्क्रॉल करते समय वीडियो को सिकुड़ने से बचाएगा
               }}>
                 <VideoPlayer 
                   onQuizStateChange={handleQuizStateChange} 
@@ -110,14 +115,15 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
                 />
               </div>
 
-              {/* 📑 MODULE LIST / SIDEBAR (मोबाइल पर वीडियो के नीचे, डेस्कटॉप पर बाईं ओर) */}
+              {/* 📑 MODULE LIST / SIDEBAR (केवल यह हिस्सा स्क्रॉल होगा, फालतू स्पेस गायब) */}
               {!isQuizActiveInPlayer && (
                 <div style={{ 
+                    flex: 1,
                     width: isMobile ? '100%' : '300px', 
-                    order: isMobile ? 2 : 1, // मोबाइल पर दूसरा स्थान
-                    overflowY: isMobile ? 'visible' : 'auto', // मोबाइल पर पैरेंट स्क्रॉल संभालेगा
+                    overflowY: 'auto', // मॉड्यूल लिस्ट के अंदर का भाग स्क्रॉल होगा
                     backgroundColor: '#ffffff',
-                    borderTop: isMobile ? '2px solid #e2e8f0' : 'none',
+                    paddingTop: isMobile ? '10px' : '0px',
+                    borderTop: isMobile ? '1px solid #e2e8f0' : 'none',
                     borderRight: isMobile ? 'none' : '1px solid #e2e8f0'
                 }}>
                   <Sidebar />
@@ -128,7 +134,7 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
 
           {/* बाकी व्यूज के लिए (Tests / Stats) */}
           {currentView !== 'training' && (
-            <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '15px' : '30px', order: 2 }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '15px' : '30px' }}>
               {currentView === 'tests' && (
                 <TestListPage user={user} onBack={() => setCurrentView('training')} />
               )}
