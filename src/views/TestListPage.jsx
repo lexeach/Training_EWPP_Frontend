@@ -40,7 +40,7 @@ export default function TestListPage({ user, onBack }) {
 
   const handleStartTest = (video) => {
     if (video && typeof setCurrentVideo === 'function') {
-      // 💡 वीडियो प्लेयर को接收 सिग्नल देने के लिए लोकलस्टोरेज में फ्लैग सेट करें
+      // 💡 वीडियो प्लेयर को सिग्नल देने के लिए लोकलस्टोरेज में फ्लैग सेट करें
       localStorage.setItem('autoStartQuiz', 'true'); 
       
       setCurrentVideo(video);
@@ -49,7 +49,6 @@ export default function TestListPage({ user, onBack }) {
   };
 
   return (
-    // 🟢 आउटर कंटेनर में मोबाइल फ्रेंडली पैडिंग सेट की ताकि स्क्रीन एज से न चिपके
     <div style={{ padding: '15px', maxWidth: '1000px', margin: '0 auto', boxSizing: 'border-box' }}>
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '10px', flexWrap: 'wrap' }}>
@@ -70,21 +69,34 @@ export default function TestListPage({ user, onBack }) {
           <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>टेस्ट देने के लिए पहले कोर्स का कोई भी वीडियो पूरा देखें।</p>
         </div>
       ) : (
-        /* 🟢 जादुई रैपर डिब्बा: यह मोबाइल पर टेबल के बड़ा होते ही हॉरिजॉन्टल स्क्रॉलर एक्टिव कर देगा */
+        /* 🟢 अपडेटेड रैपर: स्क्रॉल बार को हमेशा विजिबल और सुंदर बनाने के लिए */
         <div style={{ 
           width: '100%', 
           overflowX: 'auto', 
-          WebkitOverflowScrolling: 'touch', // iOS पर स्मूथ फील के लिए
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'thin', // Firefox के लिए थिन स्क्रॉल बार
+          scrollbarColor: '#64748b #f1f5f9', // स्क्रॉल बार का रंग
           backgroundColor: '#fff', 
           borderRadius: '8px', 
           border: '1px solid #e2e8f0', 
-          boxShadow: '0 4px 6px rgba(0,0,0,0.05)' 
+          boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+          // वेबकिट ब्राउज़र्स (Chrome, Safari, Android) के लिए स्क्रॉल बार स्टाइलिंग
+          paddingBottom: '5px' 
         }}>
+          <style>
+            {`
+              div::-webkit-scrollbar { height: 8px; }
+              div::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+              div::-webkit-scrollbar-thumb { background: #64748b; border-radius: 4px; border: 2px solid #f1f5f9; }
+              div::-webkit-scrollbar-thumb:hover { background: #475569; }
+            `}
+          </style>
+          
           <table style={{ 
             width: '100%', 
             borderCollapse: 'collapse', 
             textAlign: 'left',
-            minWidth: '600px' // 🟢 मोबाइल स्क्रीन पर टेबल को पिचकने से रोकेगा, जिससे स्क्रॉलर शो होगा
+            minWidth: '600px'
           }}>
             <thead>
               <tr style={{ backgroundColor: '#1e293b', color: '#fff' }}>
@@ -98,10 +110,8 @@ export default function TestListPage({ user, onBack }) {
               {watchedVideosList.map((video) => {
                 if (!video || !video.videoId) return null;
                 
-                // सुरक्षित तरीके से टेस्ट का रिजल्ट ढूंढना
                 const userResults = Array.isArray(user?.quizResults) ? user.quizResults : [];
                 
-                // चेक करें कि क्या यूजर ने इस वीडियो का टेस्ट पास किया हुआ है
                 const testResult = userResults.find(r => {
                   return r && 
                          String(r.videoId).trim() === String(video.videoId).trim() && 
@@ -128,7 +138,7 @@ export default function TestListPage({ user, onBack }) {
                       <button 
                         onClick={() => handleStartTest(video)}
                         style={{ 
-                          backgroundColor: testResult ? '#10b981' : '#0284c7', // पास होने पर बटन ग्रीन दिखेगा, वरना ब्लू
+                          backgroundColor: testResult ? '#10b981' : '#0284c7', 
                           color: '#fff', 
                           border: 'none', 
                           padding: '8px 14px', 
