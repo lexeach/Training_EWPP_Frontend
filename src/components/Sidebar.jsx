@@ -2,7 +2,8 @@
 import React, { useState, useContext } from 'react';
 import { ProgressContext } from '../context/ProgressContext';
 
-export default function Sidebar() {
+// 🟢 props में onVideoSelect को रिसीव किया
+export default function Sidebar({ onVideoSelect }) {
   const { modules, currentVideo, setCurrentVideo, completedVideos, currentUnlockedVideo } = useContext(ProgressContext);
   
   // यूजर के अनुभव के लिए डिफ़ॉल्ट रूप से पहला मॉड्यूल खुला रखें
@@ -22,10 +23,22 @@ export default function Sidebar() {
     const isCompleted = completedVideos.includes(vid.videoId);
     const isActive = currentVideo?.videoId === vid.videoId;
 
+    // वीडियो क्लिक हैंडलर
+    const handleVideoClick = () => {
+      if (!isLocked) {
+        setCurrentVideo(vid); // वीडियो सेट करेगा
+        
+        // 🟢 अगर पैरेंट से फंक्शन आया है, तो उसे कॉल करके पेज टॉप पर ले जाएगा
+        if (onVideoSelect) {
+          onVideoSelect();
+        }
+      }
+    };
+
     return (
       <div 
         key={vid._id || vid.videoId}
-        onClick={() => !isLocked && setCurrentVideo(vid)}
+        onClick={handleVideoClick} // 🟢 अपडेटेड क्लिक हैंडलर यहाँ लगाया
         style={{
           padding: '12px 15px',
           paddingLeft: '42px', // अंदर की तरफ धकेला ताकि Hierarchy साफ दिखे
@@ -107,7 +120,7 @@ export default function Sidebar() {
                             paddingLeft: '24px',
                             fontSize: '11.5px', 
                             fontWeight: '700', 
-                            // एक्टिव सब-मॉड्यूल का टेक्स्ट डीप ब्लू, नॉर्मल का डार्क म्यूटेड ग्रे
+                            // एक्टिव सब-मॉड्यूल का टेक्स्ट डीप ब्लू,恢复 नॉर्मल का डार्क म्यूटेड ग्रे
                             color: isSubModuleOpen ? '#0369a1' : '#475569', 
                             textTransform: 'uppercase', 
                             letterSpacing: '0.04em',
