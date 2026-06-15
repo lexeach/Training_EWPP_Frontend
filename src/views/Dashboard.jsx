@@ -79,7 +79,7 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
 
   return (
     <ProgressProvider user={user} setUser={setUser}>
-      {/* मुख्य आउटर डिब्बा - डेस्कटॉप पर 100vh, मोबाइल पर आज़ाद (auto) */}
+      {/* मुख्य आउटर डिब्बा - डेस्कटॉप पर 100vh, मोबाइल पर आज़ाद (auto) */}
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
@@ -124,7 +124,8 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
                     borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
                     flexShrink: 0 // 🟢 डेस्कटॉप पर प्लेयर इसे दबाकर छोटा नहीं कर पाएगा
                 }}>
-                  <Sidebar onVideoSelect={handleVideoSelect} isMobile={isMobile} />
+                  {/* 🟢 user स्टेट यहाँ पास की गई है ताकि Sidebar टेस्ट पास स्टेटस चेक कर सके */}
+                  <Sidebar onVideoSelect={handleVideoSelect} isMobile={isMobile} user={user} />
                 </div>
               )}
 
@@ -164,7 +165,7 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
                     <button onClick={() => setCurrentView('training')} style={{ background: '#0284c7', color: '#fff', padding: '8px 14px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>◀️ वापस</button>
                   </div>
                   <div style={{ background: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '15px', overflowX: 'auto' }}>
-                    {results.length === 0 ? <p>कोई टेस्ट रिकॉर्ड नहीं मिला।</p> : 
+                    {results.length === 0 ? <p>कोई टेस्ट रिकॉर्ड नहीं मिला。</p> : 
                       <table style={{ width: '100%', textAlign: 'left', minWidth: '400px' }}>
                         <thead><tr><th>वीडियो कोड</th><th>स्कोर</th><th>कुल प्रश्न</th><th>स्थिति</th></tr></thead>
                         <tbody>
