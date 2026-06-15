@@ -2,17 +2,51 @@
 import React, { useState, useContext } from 'react';
 import { ProgressContext } from '../context/ProgressContext';
 
-export default function Sidebar({ onVideoSelect, isMobile }) { // 🟢 isMobile भी रिसीव किया
-  const { modules, currentVideo, setCurrentVideo, completedVideos, currentUnlockedVideo } = useContext(ProgressContext);
+export default function Sidebar({ onVideoSelect, isMobile, user }) {
+  const { modules, currentVideo, setCurrentVideo, completedVideos } = useContext(ProgressContext);
   
   const [activeModuleId, setActiveModuleId] = useState(1);
   const [activeSubModuleId, setActiveSubModuleId] = useState(null);
 
+  // 🟢 1. सभी मॉड्यूल्स से सारे वीडियोस को एक सीधी सूची (Flat List) में निकालते हैं
+  const allVideos = [];
+  if (modules && Array.isArray(modules)) {
+    modules.forEach(mod => {
+      if (mod && Array.isArray(mod.videos)) {
+        allVideos.push(...mod.videos);
+      }
+      if (mod && Array.isArray(mod.subModules)) {
+        mod.subModules.forEach(subMod => {
+          if (subMod && Array.isArray(subMod.videos)) {
+            allVideos.push(...subMod.videos);
+          }
+        });
+      }
+    });
+  }
+
+  // 🟢 2. यह फलन जांचता है कि कोई विशेष वीडियो लॉक्ड है या नहीं
   const checkIsLocked = (video) => {
-    if (video.videoId === "m1s1-v1") return false;
-    if (completedVideos.includes(video.videoId)) return false;
-    if (currentUnlockedVideo === video.videoId) return false;
-    return true;
+    if (!video || !video.videoId) return true;
+
+    // पहला वीडियो (इंडेक्स 0) हमेशा बिना शर्त खुला रहेगा
+    const videoIndex = allVideos.findIndex(v => v && v.videoId === video.videoId);
+    if (videoIndex === 0) return false; 
+    if (videoIndex === -1) return true;
+
+    // पिछले वीडियो से संबंधित टेस्ट का पास स्टेटस चेक करें
+    const previousVideo = allVideos[videoIndex - 1];
+    if (!previousVideo) return true;
+
+    const quizResults = Array.isArray(user?.quizResults) ? user.quizResults : [];
+    const isPreviousTestPassed = quizResults.some(result => 
+      result && 
+      String(result.videoId).trim() === String(previousVideo.videoId).trim() && 
+      (result.passed === true || result.passed === 'true')
+    );
+
+    // अगर पिछला टेस्ट पास नहीं हुआ है, तो यह वीडियो लॉक्ड रहेगा
+    return !isPreviousTestPassed;
   };
 
   const renderVideoItem = (vid) => {
@@ -23,10 +57,11 @@ export default function Sidebar({ onVideoSelect, isMobile }) { // 🟢 isMobile 
     const handleVideoClick = () => {
       if (!isLocked) {
         setCurrentVideo(vid);
-        // 🟢 एक्शन ट्रिगर
         if (onVideoSelect) {
           onVideoSelect();
         }
+      } else {
+        alert("🔒 इस वीडियो को देखने के लिए पहले पिछले वीडियो से संबंधित टेस्ट पास करना अनिवार्य है।");
       }
     };
 
@@ -46,7 +81,8 @@ export default function Sidebar({ onVideoSelect, isMobile }) { // 🟢 isMobile 
           fontSize: '13.5px',
           borderLeft: isActive ? '4px solid #0284c7' : '4px solid transparent',
           borderBottom: '1px solid #f1f5f9',
-          transition: 'all 0.2s ease'
+          transition: 'all 0.2s ease',
+          opacity: isLocked ? 0.65 : 1 // 🟢 लॉक्ड वीडियो को धुंधला दिखाना
         }}
       >
         <span style={{ fontSize: '14px', display: 'flex', alignItems: 'center' }}>
@@ -64,7 +100,7 @@ export default function Sidebar({ onVideoSelect, isMobile }) { // 🟢 isMobile 
   };
 
   return (
-    // 🟢 यहाँ width को रिस्पॉन्सिव किया गया है ताकि मोबाइल पर एक्स्ट्रा स्पेस वेस्ट न हो
+    // 🟢 width को रिस्पॉन्सिव किया गया है ताकि मोबाइल पर एक्स्ट्रा स्पेस वेस्ट न हो
     <div style={{ width: isMobile ? '100%' : '320px', background: '#f8fafc', borderRight: isMobile ? 'none' : '1px solid #e2e8f0', height: isMobile ? 'auto' : 'calc(100vh - 56px)', overflowY: isMobile ? 'visible' : 'auto', padding: '15px', boxSizing: 'border-box' }}>
       <h3 style={{ marginTop: 0, color: '#0f172a', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', fontSize: '18px', fontWeight: '700' }}>
         कोर्स मॉड्यूल्स
