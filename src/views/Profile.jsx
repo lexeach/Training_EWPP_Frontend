@@ -115,7 +115,7 @@ export default function Profile({ user, onBack, setUser }) {
         onClick={onBack}
         style={{ padding: '8px 16px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px' }}
       >
-        ← Return to the dashboard
+        ← Return to the training dashboard
       </button>
 
       <div style={{ background: '#fff', padding: '25px', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', marginBottom: '20px' }}>
