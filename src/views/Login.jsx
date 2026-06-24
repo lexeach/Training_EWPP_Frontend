@@ -59,6 +59,13 @@ const handleLogin = async (e) => {
     }
   };
 
+ const handleKeyPress = (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault(); // फॉर्म को सबमिट होने से रोकें
+    sendOTP(); // वही काम करें जो माउस क्लिक पर हो रहा है
+  }
+};
+  
   // 🔵 3. साइनअप के लिए ईमेल पर OTP भेजना
  const sendOTP = async () => {
   // अब केवल ईमेल चेक करें
