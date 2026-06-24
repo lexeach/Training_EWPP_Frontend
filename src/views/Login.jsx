@@ -96,25 +96,35 @@ const handleLogin = async (e) => {
   };
 
   // 🔵 5. फाइनल साइनअप (रजिस्ट्रेशन) सबमिट करना
-  const handleSignupSubmit = async (e) => {
-    e.preventDefault();
-    if (!isVerified) return alert("अकाउंट बनाने से पहले कृपया ईमेल OTP वेरीफाई करें।");
-    setLoading(true);
-    try {
-      await axios.post(`${BACKEND_URL}/auth/register`, { name, email, password });
-      alert("🎉 अकाउंट सफलतापूर्वक बन गया है! अब लॉगिन करें।");
-      
-      // स्टेट्स रीसेट करके लॉगिन स्क्रीन पर भेजें
-      setIsOtpSent(false);
-      setIsVerified(false);
-      setOtp('');
-      setView('login');
-    } catch (err) {
-      alert(err.response?.data?.message || "साइनअप फेल हो गया।");
-    } finally {
-      setLoading(false);
+  // 🔵 5. फाइनल साइनअप (रजिस्ट्रेशन) सबमिट करना
+const handleSignupSubmit = async (e) => {
+  e.preventDefault(); // यह ब्राउज़र को पेज रिफ्रेश करने से रोकता है
+  
+  // 💡 मुख्य सुधार: अगर OTP अभी तक वेरिफाई नहीं हुआ है, 
+  // तो सबमिट को आगे न बढ़ने दें
+  if (!isVerified) {
+    // अगर ओटीपी भेजा जा चुका है पर वेरीफाई नहीं हुआ
+    if (isOtpSent) {
+      return alert("कृपया पहले ईमेल पर आया OTP वेरीफाई करें।");
     }
-  };
+    // अगर ओटीपी भेजा ही नहीं गया है
+    return alert("कृपया पहले ईमेल आईडी डालकर 'Send OTP' पर क्लिक करें।");
+  }
+
+  setLoading(true);
+  try {
+    await axios.post(`${BACKEND_URL}/auth/register`, { name, email, password });
+    alert("🎉 अकाउंट सफलतापूर्वक बन गया है! अब लॉगिन करें।");
+    setIsOtpSent(false);
+    setIsVerified(false);
+    setOtp('');
+    setView('login');
+  } catch (err) {
+    alert(err.response?.data?.message || "साइनअप फेल हो गया।");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f172a', color: '#fff' }}>
