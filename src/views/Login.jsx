@@ -167,7 +167,26 @@ const handleLogin = async (e) => {
 {view === 'signup' && (
   <form onSubmit={handleSignupSubmit}>
     <h2 style={{ textAlign: 'center', color: '#38bdf8', marginBottom: '20px' }}>
-      {isVerified ? "अकाउंट डिटेल्स भरें" : "ईमेल सत्यापित करें"}
+      {isVerified && (
+  <button 
+    type="submit" 
+    disabled={loading} 
+    style={{ 
+      width: '100%', 
+      padding: '12px', 
+      background: '#22c55e', 
+      color: '#fff', 
+      border: 'none', 
+      borderRadius: '4px', 
+      fontWeight: 'bold', 
+      fontSize: '16px', 
+      cursor: 'pointer', 
+      marginTop: '10px' 
+    }}
+  >
+    {loading ? 'रजिस्टर हो रहा है...' : 'रजिस्टर करें (Complete Signup)'}
+  </button>
+)}
     </h2>
 
     {/* 1. ईमेल और OTP सेक्शन (हमेशा दिखेगा) */}
