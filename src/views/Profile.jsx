@@ -120,9 +120,9 @@ export default function Profile({ user, onBack, setUser }) {
 
       <div style={{ background: '#fff', padding: '25px', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', marginBottom: '20px' }}>
         <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', marginTop: 0 }}>👤 Partner Profile Details</h2>
-        <p><strong>नाम:</strong> {user.name || 'Partner Name'}</p>
-        <p><strong>ईमेल:</strong> {user.email}</p>
-        <p><strong>अकाउंट स्टेटस:</strong> {isPaid ? '🟢 Active (Training Unlocked)' : '🔴 Pending (Pay fees)'}</p>
+        <p><strong>Name:</strong> {user.name || 'Partner Name'}</p>
+        <p><strong>Email:</strong> {user.email}</p>
+        <p><strong>Account status:</strong> {isPaid ? '🟢 Active (Training Unlocked)' : '🔴 Pending (Pay fees)'}</p>
       </div>
 
       {!isPaid && (
