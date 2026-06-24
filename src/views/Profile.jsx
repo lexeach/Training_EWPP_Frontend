@@ -115,21 +115,21 @@ export default function Profile({ user, onBack, setUser }) {
         onClick={onBack}
         style={{ padding: '8px 16px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px' }}
       >
-        ← डैशबोर्ड पर लौटें
+        ← Return to the dashboard
       </button>
 
       <div style={{ background: '#fff', padding: '25px', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', marginBottom: '20px' }}>
-        <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', marginTop: 0 }}>👤 पार्टनर प्रोफाइल डिटेल्स</h2>
-        <p><strong>नाम:</strong> {user.name || 'पार्टनर का नाम'}</p>
+        <h2 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', marginTop: 0 }}>👤 Partner Profile Details</h2>
+        <p><strong>नाम:</strong> {user.name || 'Partner Name'}</p>
         <p><strong>ईमेल:</strong> {user.email}</p>
-        <p><strong>अकाउंट स्टेटस:</strong> {isPaid ? '🟢 एक्टिव (ट्रेनिंग अनलॉक)' : '🔴 पेंडिंग (फीस जमा करें)'}</p>
+        <p><strong>अकाउंट स्टेटस:</strong> {isPaid ? '🟢 Active (Training Unlocked)' : '🔴 Pending (Pay fees)'}</p>
       </div>
 
       {!isPaid && (
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '30px', borderRadius: '8px', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ marginTop: 0, color: '#0f172a' }}>💳 ट्रेनिंग फीस एक्टिवेशन (Razorpay Instant Pay)</h3>
+          <h3 style={{ marginTop: 0, color: '#0f172a' }}>💳 Training Fee Activation (Razorpay Instant Pay)</h3>
           <p style={{ color: '#64748b', maxWidth: '500px', margin: '10px auto 25px auto' }}>
-            सभी वीडियो मॉड्यूल्स को अनलॉक करने और ट्रेनिंग के बाद सर्टिफिकेट क्लेम करने के लिए आपको एक बार <strong>₹350/-</strong> की फीस का सुरक्षित भुगतान करना होगा।
+            To unlock all video modules and claim the certificate after training, you need to make a secure one-time payment of <strong>₹350/-</strong>.
           </p>
           
           <button 
@@ -148,7 +148,7 @@ export default function Profile({ user, onBack, setUser }) {
               transition: 'all 0.2s'
             }}
           >
-            {loading ? 'प्रक्रिया शुरू हो रही है...' : '🔒 Pay Now ₹350'}
+            {loading ? 'The process is starting....' : '🔒 Pay Now ₹350'}
           </button>
         </div>
       )}
