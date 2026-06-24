@@ -6,6 +6,7 @@ export default function Profile({ user, onBack, setUser }) {
   const [isPaid, setIsPaid] = useState(user.isPaid || false);
   const [loading, setLoading] = useState(false);
 
+  // सुनिश्चित करें कि यह लिंक सही है
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
 
   const handlePayment = async () => {
@@ -39,8 +40,8 @@ export default function Profile({ user, onBack, setUser }) {
             });
 
             if (verifyResponse.data.success) {
-              // 🟢 पेमेंट सफल होते ही डेटा अपडेट करें और पेज रिफ्रेश करें
               localStorage.setItem('partnerUser', JSON.stringify(verifyResponse.data.user));
+              // 🟢 पेमेंट सफल होने पर तुरंत रिलोड
               window.location.reload(); 
             } else {
               alert("Payment verification failed. Please contact support.");
