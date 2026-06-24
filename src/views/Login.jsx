@@ -171,24 +171,39 @@ const handleLogin = async (e) => {
     </h2>
 
     {/* 1. ईमेल और OTP सेक्शन */}
-    <div style={{ marginBottom: '12px' }}>
-      <label>ईमेल आईडी:</label>
-      <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-        <input 
-          type="email" 
-          value={email} 
-          onChange={(e) => setEmail(e.target.value)} 
-          disabled={isOtpSent} 
-          required 
-          style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} 
-        />
-        {!isOtpSent && (
-          <button type="button" onClick={sendOTP} disabled={loading} style={{ padding: '10px', background: '#38bdf8', color: '#0f172a', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-            Send OTP
-          </button>
-        )}
-      </div>
-    </div>
+  {/* ईमेल और OTP सेक्शन */}
+<div style={{ marginBottom: '12px' }}>
+  <label>ईमेल आईडी:</label>
+  <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+    <input 
+      type="email" 
+      value={email} 
+      onChange={(e) => setEmail(e.target.value)} 
+      disabled={isOtpSent || loading} // 🟢 यहाँ भी loading का ध्यान रखें
+      required 
+      style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} 
+    />
+    {!isOtpSent && (
+      <button 
+        type="button" 
+        onClick={sendOTP} 
+        disabled={loading} // 🟢 बटन तब डिसेबल रहेगा जब लोडिंग हो
+        style={{ 
+          padding: '10px', 
+          background: '#38bdf8', 
+          color: '#0f172a', 
+          border: 'none', 
+          borderRadius: '4px', 
+          fontWeight: 'bold', 
+          cursor: loading ? 'not-allowed' : 'pointer', // कर्सर भी बदलें
+          opacity: loading ? 0.7 : 1 // हल्की पारदर्शिता
+        }}
+      >
+        {loading ? 'भेजा जा रहा है...' : 'Send OTP'} {/* 🟢 यहाँ टेक्स्ट बदला गया है */}
+      </button>
+    )}
+  </div>
+</div>
 
     {isOtpSent && !isVerified && (
       <div style={{ background: '#334155', padding: '15px', borderRadius: '6px', marginBottom: '15px' }}>
