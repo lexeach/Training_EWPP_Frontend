@@ -60,21 +60,23 @@ const handleLogin = async (e) => {
   };
 
   // 🔵 3. साइनअप के लिए ईमेल पर OTP भेजना
-  const sendOTP = async () => {
-    if (!name || !email || !password) return alert("कृपया पहले नाम, ईमेल और पासवर्ड भरें।");
-    setLoading(true);
-    try {
-      const res = await axios.post(`${BACKEND_URL}/auth-utils/send-signup-otp`, { email });
-      if (res.data.success) {
-        setIsOtpSent(true);
-        alert("🎉 OTP आपकी ईमेल पर भेज दिया गया है!");
-      }
-    } catch (err) {
-      alert(err.response?.data?.message || "OTP भेजने में समस्या आई।");
-    } finally {
-      setLoading(false);
+ const sendOTP = async () => {
+  // अब केवल ईमेल चेक करें
+  if (!email) return alert("कृपया अपनी ईमेल आईडी भरें।");
+  
+  setLoading(true);
+  try {
+    const res = await axios.post(`${BACKEND_URL}/auth-utils/send-signup-otp`, { email });
+    if (res.data.success) {
+      setIsOtpSent(true);
+      alert("🎉 OTP आपकी ईमेल पर भेज दिया गया है!");
     }
-  };
+  } catch (err) {
+    alert(err.response?.data?.message || "OTP भेजने में समस्या आई।");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // 🔵 4. भेजा गया OTP वेरीफाई करना
   const verifyOTP = async () => {
