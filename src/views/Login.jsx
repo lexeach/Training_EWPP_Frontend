@@ -161,58 +161,72 @@ const handleLogin = async (e) => {
         )}
 
         {/* 🔵 VIEW 3: SIGNUP WITH OTP FORM */}
-        {view === 'signup' && (
-          <form onSubmit={handleSignupSubmit}>
-            <h2 style={{ textAlign: 'center', color: '#38bdf8', marginBottom: '20px' }}>नया पार्टनर अकाउंट बनाएं</h2>
-            
-            <div style={{ marginBottom: '12px' }}>
-              <label>पूरा नाम:</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} disabled={isOtpSent} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
-            </div>
+      {/* 🔵 VIEW 3: SIGNUP WITH OTP FORM */}
+{view === 'signup' && (
+  <form onSubmit={handleSignupSubmit}>
+    <h2 style={{ textAlign: 'center', color: '#38bdf8', marginBottom: '20px' }}>
+      {isVerified ? "अकाउंट डिटेल्स भरें" : "ईमेल सत्यापित करें"}
+    </h2>
 
-            <div style={{ marginBottom: '12px' }}>
-              <label>ईमेल आईडी:</label>
-              <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isOtpSent} required style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
-                {!isOtpSent && (
-                  <button type="button" onClick={sendOTP} disabled={loading} style={{ padding: '10px', background: '#38bdf8', color: '#0f172a', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-                    Send OTP
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '15px' }}>
-              <label>पासवर्ड सेट करें:</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} disabled={isOtpSent} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
-            </div>
-
-            {/* OTP इनपुट सेक्शन (ईमेल पर OTP सेंड होने के बाद एक्टिव होगा) */}
-            {isOtpSent && !isVerified && (
-              <div style={{ background: '#334155', padding: '15px', borderRadius: '6px', marginBottom: '15px' }}>
-                <label style={{ fontSize: '13px', color: '#38bdf8' }}>ईमेल पर आया 6-डिजिट OTP डालें:</label>
-                <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-                  <input type="text" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="OTP दर्ज करें" style={{ flex: 1, padding: '10px', borderRadius: '4px', border: 'none', textAlign: 'center', fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }} />
-                  <button type="button" onClick={verifyOTP} disabled={loading} style={{ padding: '10px 20px', background: '#22c55e', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-                    Verify
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {isVerified && (
-              <p style={{ color: '#22c55e', fontWeight: 'bold', fontSize: '14px', textAlign: 'center', margin: '5px 0' }}>== ईमेल सफलतापूर्वक सत्यापित! ==</p>
-            )}
-
-            <button type="submit" disabled={!isVerified || loading} style={{ width: '100%', padding: '12px', background: isVerified ? '#22c55e' : '#64748b', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '16px', cursor: isVerified ? 'pointer' : 'not-allowed', marginTop: '10px' }}>
-              {loading ? 'रजिस्टर हो रहा है...' : 'रजिस्टर करें (Complete Signup)'}
-            </button>
-
-            <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#94a3b8' }}>
-              पहले से अकाउंट है? <span onClick={() => setView('login')} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>यहाँ लॉगिन करें</span>
-            </p>
-          </form>
+    {/* 1. ईमेल और OTP सेक्शन (हमेशा दिखेगा) */}
+    <div style={{ marginBottom: '12px' }}>
+      <label>ईमेल आईडी:</label>
+      <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+        <input 
+          type="email" 
+          value={email} 
+          onChange={(e) => setEmail(e.target.value)} 
+          disabled={isOtpSent} 
+          required 
+          style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} 
+        />
+        {!isOtpSent && (
+          <button type="button" onClick={sendOTP} disabled={loading} style={{ padding: '10px', background: '#38bdf8', color: '#0f172a', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
+            Send OTP
+          </button>
         )}
+      </div>
+    </div>
+
+    {isOtpSent && !isVerified && (
+      <div style={{ background: '#334155', padding: '15px', borderRadius: '6px', marginBottom: '15px' }}>
+        <label style={{ fontSize: '13px', color: '#38bdf8' }}>ईमेल पर आया 6-डिजिट OTP डालें:</label>
+        <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+          <input type="text" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="OTP दर्ज करें" style={{ flex: 1, padding: '10px', borderRadius: '4px', border: 'none', textAlign: 'center', fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }} />
+          <button type="button" onClick={verifyOTP} disabled={loading} style={{ padding: '10px 20px', background: '#22c55e', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
+            Verify
+          </button>
+        </div>
+      </div>
+    )}
+
+    {/* 2. नाम और पासवर्ड सेक्शन (केवल वेरीफाई होने के बाद दिखेंगे) */}
+    {isVerified && (
+      <>
+        <div style={{ marginBottom: '12px' }}>
+          <label>पूरा नाम:</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label>पासवर्ड सेट करें:</label>
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
+        </div>
+
+        <p style={{ color: '#22c55e', fontWeight: 'bold', fontSize: '14px', textAlign: 'center', margin: '5px 0' }}>== ईमेल सत्यापित! ==</p>
+      </>
+    )}
+
+    {/* 3. रजिस्टर बटन (केवल वेरीफाई होने पर इनेबल होगा) */}
+    <button type="submit" disabled={!isVerified || loading} style={{ width: '100%', padding: '12px', background: isVerified ? '#22c55e' : '#64748b', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '16px', cursor: isVerified ? 'pointer' : 'not-allowed', marginTop: '10px' }}>
+      {loading ? 'रजिस्टर हो रहा है...' : 'रजिस्टर करें (Complete Signup)'}
+    </button>
+
+    <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#94a3b8' }}>
+      पहले से अकाउंट है? <span onClick={() => setView('login')} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>यहाँ लॉगिन करें</span>
+    </p>
+  </form>
+)}
 
       </div>
     </div>
