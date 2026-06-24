@@ -129,7 +129,7 @@ export default function Profile({ user, onBack, setUser }) {
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '30px', borderRadius: '8px', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
           <h3 style={{ marginTop: 0, color: '#0f172a' }}>💳 ट्रेनिंग फीस एक्टिवेशन (Razorpay Instant Pay)</h3>
           <p style={{ color: '#64748b', maxWidth: '500px', margin: '10px auto 25px auto' }}>
-            सभी वीडियो मॉड्यूल्स को अनलॉक करने और ट्रेनिंग के बाद सर्टिफिकेट क्लेम करने के लिए आपको एक बार <strong>₹999/-</strong> की फीस का सुरक्षित भुगतान करना होगा।
+            सभी वीडियो मॉड्यूल्स को अनलॉक करने और ट्रेनिंग के बाद सर्टिफिकेट क्लेम करने के लिए आपको एक बार <strong>₹350/-</strong> की फीस का सुरक्षित भुगतान करना होगा।
           </p>
           
           <button 
@@ -148,7 +148,7 @@ export default function Profile({ user, onBack, setUser }) {
               transition: 'all 0.2s'
             }}
           >
-            {loading ? 'प्रक्रिया शुरू हो रही है...' : '🔒 Pay Now ₹999'}
+            {loading ? 'प्रक्रिया शुरू हो रही है...' : '🔒 Pay Now ₹350'}
           </button>
         </div>
       )}
