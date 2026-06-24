@@ -18,7 +18,7 @@ export default function Profile({ user, onBack, setUser }) {
       const razorpayKey = keyResponse.data.key;
 
       const orderResponse = await axios.post(`${BACKEND_URL}/payment/order`, {
-        amount: 999,
+        amount: 350,
         userId: user._id
       });
 
