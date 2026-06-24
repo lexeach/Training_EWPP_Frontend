@@ -167,29 +167,10 @@ const handleLogin = async (e) => {
 {view === 'signup' && (
   <form onSubmit={handleSignupSubmit}>
     <h2 style={{ textAlign: 'center', color: '#38bdf8', marginBottom: '20px' }}>
-      {isVerified && (
-  <button 
-    type="submit" 
-    disabled={loading} 
-    style={{ 
-      width: '100%', 
-      padding: '12px', 
-      background: '#22c55e', 
-      color: '#fff', 
-      border: 'none', 
-      borderRadius: '4px', 
-      fontWeight: 'bold', 
-      fontSize: '16px', 
-      cursor: 'pointer', 
-      marginTop: '10px' 
-    }}
-  >
-    {loading ? 'रजिस्टर हो रहा है...' : 'रजिस्टर करें (Complete Signup)'}
-  </button>
-)}
+      {isVerified ? "अकाउंट डिटेल्स भरें" : "नया पार्टनर अकाउंट बनाएं"}
     </h2>
 
-    {/* 1. ईमेल और OTP सेक्शन (हमेशा दिखेगा) */}
+    {/* 1. ईमेल और OTP सेक्शन */}
     <div style={{ marginBottom: '12px' }}>
       <label>ईमेल आईडी:</label>
       <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
@@ -234,14 +215,16 @@ const handleLogin = async (e) => {
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
         </div>
 
-        <p style={{ color: '#22c55e', fontWeight: 'bold', fontSize: '14px', textAlign: 'center', margin: '5px 0' }}>== ईमेल सत्यापित! ==</p>
+        <p style={{ color: '#22c55e', fontWeight: 'bold', fontSize: '14px', textAlign: 'center', margin: '5px 0' }}>== ईमेल सफलतापूर्वक सत्यापित! ==</p>
       </>
     )}
 
-    {/* 3. रजिस्टर बटन (केवल वेरीफाई होने पर इनेबल होगा) */}
-    <button type="submit" disabled={!isVerified || loading} style={{ width: '100%', padding: '12px', background: isVerified ? '#22c55e' : '#64748b', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '16px', cursor: isVerified ? 'pointer' : 'not-allowed', marginTop: '10px' }}>
-      {loading ? 'रजिस्टर हो रहा है...' : 'रजिस्टर करें (Complete Signup)'}
-    </button>
+    {/* 3. रजिस्टर बटन (केवल वेरीफाई होने पर ही दिखेगा) */}
+    {isVerified && (
+      <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: '#22c55e', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', marginTop: '10px' }}>
+        {loading ? 'रजिस्टर हो रहा है...' : 'रजिस्टर करें (Complete Signup)'}
+      </button>
+    )}
 
     <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#94a3b8' }}>
       पहले से अकाउंट है? <span onClick={() => setView('login')} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>यहाँ लॉगिन करें</span>
