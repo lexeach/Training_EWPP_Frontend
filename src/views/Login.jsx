@@ -189,6 +189,7 @@ const handleSignupSubmit = async (e) => {
       type="email" 
       value={email} 
       onChange={(e) => setEmail(e.target.value)} 
+      onKeyDown={handleKeyPress} // 🟢 यह लाइन जोड़ें
       disabled={isOtpSent || loading} // 🟢 यहाँ भी loading का ध्यान रखें
       required 
       style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} 
