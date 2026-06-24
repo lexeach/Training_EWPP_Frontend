@@ -20,118 +20,117 @@ export default function Login({ onLoginSuccess }) {
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
 
   // 🟢 1. लॉगिन हैंडलर
-  // 🟢 1. लॉगिन हैंडलर (Update this part in Login.jsx)
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  try {
-    const res = await axios.post(`${BACKEND_URL}/auth/login`, { email, password });
-    
-    // 🚀 [FIX] टोकन को स्टोर करें (यह लाइन आपके कोड में मिसिंग थी!)
-    if (res.data && res.data.token) {
-      localStorage.setItem('token', res.data.token);
-    }
-    
-    onLoginSuccess(res.data.user || res.data);
-  } catch (err) {
-    alert(err.response?.data?.message || "लॉगिन फेल! कृपया डिटेल्स जांचें।");
-  } finally {
-    setLoading(false);
-  }
-};
-
-  // 🟡 2. फॉरगॉट पासवर्ड हैंडलर
-  const handleForgotPassword = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (!email) return alert("कृपया अपनी रजिस्टर्ड ईमेल आईडी डालें।");
     setLoading(true);
     try {
-      const res = await axios.post(`${BACKEND_URL}/auth-utils/forgot-password`, { email });
-      if (res.data.success) {
-        alert("🎉 पासवर्ड रीसेट लिंक आपकी ईमेल पर भेज दिया गया है।");
-        setView('login');
+      const res = await axios.post(`${BACKEND_URL}/auth/login`, { email, password });
+      
+      // 🚀 [FIX] टोकन को स्टोर करें (यह लाइन आपके कोड में मिसिंग थी!)
+      if (res.data && res.data.token) {
+        localStorage.setItem('token', res.data.token);
       }
+      
+      onLoginSuccess(res.data.user || res.data);
     } catch (err) {
-      // 💡 अब यह सर्वर की असली एरर को स्क्रीन पर दिखाएगा!
-      alert(err.response?.data?.message || "लिंक भेजने में समस्या आई।");
+      alert(err.response?.data?.message || "Login failed! Please check your credentials.");
     } finally {
       setLoading(false);
     }
   };
 
- const handleKeyPress = (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault(); // फॉर्म को सबमिट होने से रोकें
-    sendOTP(); // वही काम करें जो माउस क्लिक पर हो रहा है
-  }
-};
+  // 🟡 2. फॉरगॉट पासवर्ड हैंडलर
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!email) return alert("Please enter your registered email ID.");
+    setLoading(true);
+    try {
+      const res = await axios.post(`${BACKEND_URL}/auth-utils/forgot-password`, { email });
+      if (res.data.success) {
+        alert("🎉 Password reset link has been sent to your email.");
+        setView('login');
+      }
+    } catch (err) {
+      // 💡 अब यह सर्वर की असली एरर को स्क्रीन पर दिखाएगा!
+      alert(err.response?.data?.message || "Problem sending the link.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // फॉर्म को सबमिट होने से रोकें
+      sendOTP(); // वही काम करें जो माउस क्लिक पर हो रहा है
+    }
+  };
   
   // 🔵 3. साइनअप के लिए ईमेल पर OTP भेजना
- const sendOTP = async () => {
-  // अब केवल ईमेल चेक करें
-  if (!email) return alert("कृपया अपनी ईमेल आईडी भरें।");
-  
-  setLoading(true);
-  try {
-    const res = await axios.post(`${BACKEND_URL}/auth-utils/send-signup-otp`, { email });
-    if (res.data.success) {
-      setIsOtpSent(true);
-      alert("🎉 OTP आपकी ईमेल पर भेज दिया गया है!");
+  const sendOTP = async () => {
+    // अब केवल ईमेल चेक करें
+    if (!email) return alert("Please enter your email ID.");
+    
+    setLoading(true);
+    try {
+      const res = await axios.post(`${BACKEND_URL}/auth-utils/send-signup-otp`, { email });
+      if (res.data.success) {
+        setIsOtpSent(true);
+        alert("🎉 OTP has been sent to your email!");
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Problem sending OTP.");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    alert(err.response?.data?.message || "OTP भेजने में समस्या आई।");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // 🔵 4. भेजा गया OTP वेरीफाई करना
   const verifyOTP = async () => {
-    if (!otp) return alert("कृपया प्राप्त हुआ OTP डालें।");
+    if (!otp) return alert("Please enter the received OTP.");
     setLoading(true);
     try {
       const res = await axios.post(`${BACKEND_URL}/auth-utils/verify-signup-otp`, { email, otp });
       if (res.data.success) {
         setIsVerified(true);
-        alert("🟢 ईमेल सफलतापूर्वक वेरीफाई हो गई है! अब आप फाइनल रजिस्टर कर सकते हैं।");
+        alert("🟢 Email successfully verified! Now you can complete registration.");
       }
     } catch (err) {
-      alert(err.response?.data?.message || "गलत OTP, कृपया दोबारा प्रयास करें।");
+      alert(err.response?.data?.message || "Incorrect OTP, please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   // 🔵 5. फाइनल साइनअप (रजिस्ट्रेशन) सबमिट करना
-  // 🔵 5. फाइनल साइनअप (रजिस्ट्रेशन) सबमिट करना
-const handleSignupSubmit = async (e) => {
-  e.preventDefault(); // यह ब्राउज़र को पेज रिफ्रेश करने से रोकता है
-  
-  // 💡 मुख्य सुधार: अगर OTP अभी तक वेरिफाई नहीं हुआ है, 
-  // तो सबमिट को आगे न बढ़ने दें
-  if (!isVerified) {
-    // अगर ओटीपी भेजा जा चुका है पर वेरीफाई नहीं हुआ
-    if (isOtpSent) {
-      return alert("कृपया पहले ईमेल पर आया OTP वेरीफाई करें।");
+  const handleSignupSubmit = async (e) => {
+    e.preventDefault(); // यह ब्राउज़र को पेज रिफ्रेश करने से रोकता है
+    
+    // 💡 मुख्य सुधार: अगर OTP अभी तक वेरिफाई नहीं हुआ है, 
+    // तो सबमिट को आगे न बढ़ने दें
+    if (!isVerified) {
+      // अगर ओटीपी भेजा जा चुका है पर वेरीफाई नहीं हुआ
+      if (isOtpSent) {
+        return alert("Please verify the OTP sent to your email first.");
+      }
+      // अगर ओटीपी भेजा ही नहीं गया है
+      return alert("Please enter your email ID and click 'Send OTP' first.");
     }
-    // अगर ओटीपी भेजा ही नहीं गया है
-    return alert("कृपया पहले ईमेल आईडी डालकर 'Send OTP' पर क्लिक करें।");
-  }
 
-  setLoading(true);
-  try {
-    await axios.post(`${BACKEND_URL}/auth/register`, { name, email, password });
-    alert("🎉 अकाउंट सफलतापूर्वक बन गया है! अब लॉगिन करें।");
-    setIsOtpSent(false);
-    setIsVerified(false);
-    setOtp('');
-    setView('login');
-  } catch (err) {
-    alert(err.response?.data?.message || "साइनअप फेल हो गया।");
-  } finally {
-    setLoading(false);
-  }
-};
+    setLoading(true);
+    try {
+      await axios.post(`${BACKEND_URL}/auth/register`, { name, email, password });
+      alert("🎉 Account created successfully! Now login.");
+      
+      setIsOtpSent(false);
+      setIsVerified(false);
+      setOtp('');
+      setView('login');
+    } catch (err) {
+      alert(err.response?.data?.message || "Signup failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f172a', color: '#fff' }}>
@@ -140,23 +139,23 @@ const handleSignupSubmit = async (e) => {
         {/* 🟢 VIEW 1: LOGIN FORM */}
         {view === 'login' && (
           <form onSubmit={handleLogin}>
-            <h2 style={{ textAlign: 'center', color: '#38bdf8', marginBottom: '25px' }}>पार्टनर लॉगिन</h2>
+            <h2 style={{ textAlign: 'center', color: '#38bdf8', marginBottom: '25px' }}>Partner Login</h2>
             <div style={{ marginBottom: '15px' }}>
-              <label>ईमेल आईडी:</label>
+              <label>Email ID:</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
             </div>
             <div style={{ marginBottom: '20px' }}>
-              <label>पासवर्ड:</label>
+              <label>Password:</label>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
             </div>
             <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-              {loading ? 'लॉगिन हो रहा है...' : 'लॉगिन करें'}
+              {loading ? 'Logging in...' : 'Login'}
             </button>
             <div style={{ textAlign: 'right', marginTop: '10px' }}>
-              <span onClick={() => setView('forgot')} style={{ color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>पासवर्ड भूल गए (Forgot Password)?</span>
+              <span onClick={() => setView('forgot')} style={{ color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>Forgot Password?</span>
             </div>
             <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#94a3b8' }}>
-              नए पार्टनर हैं? <span onClick={() => setView('signup')} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>यहाँ अकाउंट बनाएं</span>
+              New Partner? <span onClick={() => setView('signup')} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>Create Account</span>
             </p>
           </form>
         )}
@@ -164,106 +163,101 @@ const handleSignupSubmit = async (e) => {
         {/* 🟡 VIEW 2: FORGOT PASSWORD FORM */}
         {view === 'forgot' && (
           <form onSubmit={handleForgotPassword}>
-            <h2 style={{ textAlign: 'center', color: '#38bdf8', marginBottom: '15px' }}>पासवर्ड रीसेट</h2>
-            <p style={{ fontSize: '13px', color: '#94a3b8', textAlign: 'center', marginBottom: '20px' }}>अपनी रजिस्टर्ड ईमेल डालें, हम उस पर पासवर्ड बदलने का लिंक भेजेंगे।</p>
+            <h2 style={{ textAlign: 'center', color: '#38bdf8', marginBottom: '15px' }}>Reset Password</h2>
+            <p style={{ fontSize: '13px', color: '#94a3b8', textAlign: 'center', marginBottom: '20px' }}>Enter your registered email, we will send a password reset link.</p>
             <div style={{ marginBottom: '20px' }}>
-              <label>ईमेल आईडी:</label>
+              <label>Email ID:</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
             </div>
             <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: '#eab308', color: '#0f172a', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-              {loading ? 'लिंक भेजा जा रहा है...' : 'रीसेट लिंक भेजें'}
+              {loading ? 'Sending link...' : 'Send Reset Link'}
             </button>
             <div style={{ textAlign: 'center', marginTop: '15px' }}>
-              <span onClick={() => setView('login')} style={{ color: '#38bdf8', fontSize: '14px', cursor: 'pointer' }}>← वापस लॉगिन पर आएं</span>
+              <span onClick={() => setView('login')} style={{ color: '#38bdf8', fontSize: '14px', cursor: 'pointer' }}>← Back to Login</span>
             </div>
           </form>
         )}
 
         {/* 🔵 VIEW 3: SIGNUP WITH OTP FORM */}
-      {/* 🔵 VIEW 3: SIGNUP WITH OTP FORM */}
-{view === 'signup' && (
-  <form onSubmit={handleSignupSubmit}>
-    <h2 style={{ textAlign: 'center', color: '#38bdf8', marginBottom: '20px' }}>
-      {isVerified ? "अकाउंट डिटेल्स भरें" : "नया पार्टनर अकाउंट बनाएं"}
-    </h2>
+        {view === 'signup' && (
+          <form onSubmit={handleSignupSubmit}>
+            <h2 style={{ textAlign: 'center', color: '#38bdf8', marginBottom: '20px' }}>
+              {isVerified ? "Enter Account Details" : "Create New Partner Account"}
+            </h2>
 
-    {/* 1. ईमेल और OTP सेक्शन */}
-  {/* ईमेल और OTP सेक्शन */}
-<div style={{ marginBottom: '12px' }}>
-  <label>ईमेल आईडी:</label>
-  <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-    <input 
-      type="email" 
-      value={email} 
-      onChange={(e) => setEmail(e.target.value)} 
-      onKeyDown={handleKeyPress} // 🟢 यह लाइन जोड़ें
-      disabled={isOtpSent || loading} // 🟢 यहाँ भी loading का ध्यान रखें
-      required 
-      style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} 
-    />
-    {!isOtpSent && (
-      <button 
-        type="button" 
-        onClick={sendOTP} 
-        disabled={loading} // 🟢 बटन तब डिसेबल रहेगा जब लोडिंग हो
-        style={{ 
-          padding: '10px', 
-          background: '#38bdf8', 
-          color: '#0f172a', 
-          border: 'none', 
-          borderRadius: '4px', 
-          fontWeight: 'bold', 
-          cursor: loading ? 'not-allowed' : 'pointer', // कर्सर भी बदलें
-          opacity: loading ? 0.7 : 1 // हल्की पारदर्शिता
-        }}
-      >
-        {loading ? 'भेजा जा रहा है...' : 'Send OTP'} {/* 🟢 यहाँ टेक्स्ट बदला गया है */}
-      </button>
-    )}
-  </div>
-</div>
+            <div style={{ marginBottom: '12px' }}>
+              <label>Email ID:</label>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+                <input 
+                  type="email" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  onKeyDown={handleKeyPress} 
+                  disabled={isOtpSent || loading} 
+                  required 
+                  style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} 
+                />
+                {!isOtpSent && (
+                  <button 
+                    type="button" 
+                    onClick={sendOTP} 
+                    disabled={loading} 
+                    style={{ 
+                      padding: '10px', 
+                      background: '#38bdf8', 
+                      color: '#0f172a', 
+                      border: 'none', 
+                      borderRadius: '4px', 
+                      fontWeight: 'bold', 
+                      cursor: loading ? 'not-allowed' : 'pointer', 
+                      opacity: loading ? 0.7 : 1 
+                    }}
+                  >
+                    {loading ? 'Sending...' : 'Send OTP'}
+                  </button>
+                )}
+              </div>
+            </div>
 
-    {isOtpSent && !isVerified && (
-      <div style={{ background: '#334155', padding: '15px', borderRadius: '6px', marginBottom: '15px' }}>
-        <label style={{ fontSize: '13px', color: '#38bdf8' }}>ईमेल पर आया 6-डिजिट OTP डालें:</label>
-        <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-          <input type="text" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="OTP दर्ज करें" style={{ flex: 1, padding: '10px', borderRadius: '4px', border: 'none', textAlign: 'center', fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }} />
-          <button type="button" onClick={verifyOTP} disabled={loading} style={{ padding: '10px 20px', background: '#22c55e', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
-            Verify
-          </button>
-        </div>
-      </div>
-    )}
+            {isOtpSent && !isVerified && (
+              <div style={{ background: '#334155', padding: '15px', borderRadius: '6px', marginBottom: '15px' }}>
+                <label style={{ fontSize: '13px', color: '#38bdf8' }}>Enter 6-digit OTP sent to email:</label>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+                  <input type="text" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="Enter OTP" style={{ flex: 1, padding: '10px', borderRadius: '4px', border: 'none', textAlign: 'center', fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }} />
+                  <button type="button" onClick={verifyOTP} disabled={loading} style={{ padding: '10px 20px', background: '#22c55e', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
+                    Verify
+                  </button>
+                </div>
+              </div>
+            )}
 
-    {/* 2. नाम और पासवर्ड सेक्शन (केवल वेरीफाई होने के बाद दिखेंगे) */}
-    {isVerified && (
-      <>
-        <div style={{ marginBottom: '12px' }}>
-          <label>पूरा नाम:</label>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
-        </div>
+            {isVerified && (
+              <>
+                <div style={{ marginBottom: '12px' }}>
+                  <label>Full Name:</label>
+                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
+                </div>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label>पासवर्ड सेट करें:</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
-        </div>
+                <div style={{ marginBottom: '15px' }}>
+                  <label>Set Password:</label>
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
+                </div>
 
-        <p style={{ color: '#22c55e', fontWeight: 'bold', fontSize: '14px', textAlign: 'center', margin: '5px 0' }}>== ईमेल सफलतापूर्वक सत्यापित! ==</p>
-      </>
-    )}
+                <p style={{ color: '#22c55e', fontWeight: 'bold', fontSize: '14px', textAlign: 'center', margin: '5px 0' }}>== Email Verified Successfully! ==</p>
+              </>
+            )}
 
-    {/* 3. रजिस्टर बटन (केवल वेरीफाई होने पर ही दिखेगा) */}
-    {isVerified && (
-      <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: '#22c55e', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', marginTop: '10px' }}>
-        {loading ? 'रजिस्टर हो रहा है...' : 'रजिस्टर करें (Complete Signup)'}
-      </button>
-    )}
+            {isVerified && (
+              <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: '#22c55e', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', marginTop: '10px' }}>
+                {loading ? 'Registering...' : 'Register (Complete Signup)'}
+              </button>
+            )}
 
-    <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#94a3b8' }}>
-      पहले से अकाउंट है? <span onClick={() => setView('login')} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>यहाँ लॉगिन करें</span>
-    </p>
-  </form>
-)}
+            <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#94a3b8' }}>
+              Already have an account? <span onClick={() => setView('login')} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>Login here</span>
+            </p>
+          </form>
+        )}
 
       </div>
     </div>
