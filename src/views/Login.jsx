@@ -246,8 +246,7 @@ export default function Login({ onLoginSuccess }) {
                 </div>
 
 
-          // 1. एक नई State जोड़ें
-
+          
 <div style={{ marginBottom: '12px' }}>
   <label>Mobile Number:</label>
   <input 
