@@ -32,66 +32,61 @@ export default function Profile({ user, onBack, setUser }) {
         name: "EWPP Training Portal",
         description: "चैनल पार्टनर ट्रेनिंग FEES भुगतान",
         order_id: order_id,
-       handler: async function (response) {
-  console.log("=== 🟢 FRONTEND RAZORPAY SUCCESS HANDLER TRIGGERED ===");
-  console.log("Razorpay Response Object:", response);
-  
-  try {
-    console.log("[FRONTEND LOG] बैकएंड के /verify एंडपॉइंट पर डेटा भेज रहे हैं...");
-    const verifyResponse = await axios.post(`${BACKEND_URL}/payment/verify`, {
-      razorpay_order_id: response.razorpay_order_id,
-      razorpay_payment_id: response.razorpay_payment_id,
-      razorpay_signature: response.razorpay_signature,
-      userId: user._id
-    });
+        handler: async function (response) {
+          console.log("=== 🟢 FRONTEND RAZORPAY SUCCESS HANDLER TRIGGERED ===");
+          console.log("Razorpay Response Object:", response);
+          
+          try {
+            console.log("[FRONTEND LOG] बैकएंड के /verify एंडपॉइंट पर डेटा भेज रहे हैं...");
+            const verifyResponse = await axios.post(`${BACKEND_URL}/payment/verify`, {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              userId: user._id
+            });
 
-    console.log("[FRONTEND LOG] बैकएंड से /verify का रिस्पॉन्स आया:", verifyResponse.data);
+            console.log("[FRONTEND LOG] बैकएंड से /verify का रिस्पॉन्स आया:", verifyResponse.data);
 
-    if (verifyResponse.data.success) {
-      const freshUserFromDB = verifyResponse.data.user;
-      
-      console.log("[FRONTEND LOG] रिस्पॉन्स के अंदर का User object:", freshUserFromDB);
-      console.log("[FRONTEND LOG] freshUserFromDB.isPaid की वैल्यू:", freshUserFromDB?.isPaid);
+            if (verifyResponse.data.success) {
+              const freshUserFromDB = verifyResponse.data.user;
+              
+              console.log("[FRONTEND LOG] रिस्पॉन्स के अंदर का User object:", freshUserFromDB);
+              console.log("[FRONTEND LOG] freshUserFromDB.isPaid की वैल्यू:", freshUserFromDB?.isPaid);
 
-      // 💡 लाइव अलर्ट जो सच उगलवाएगा
-      alert(
-        `📢 [FRONTEND LOG REPORT]\n\n` +
-        `1. API Success Status: ${verifyResponse.data.success}\n` +
-        `2. Database user found: ${freshUserFromDB ? "YES" : "NO"}\n` +
-        `3. Database isPaid Value: ${freshUserFromDB?.isPaid}\n\n` +
-        `अगर ऊपर isPaid की वैल्यू true है, तो डेटाबेस अपडेट हो गया है!`
-      );
+              // 💡 लाइव अलर्ट जो सच उगलवाएगा
+              alert(
+                `📢 [FRONTEND LOG REPORT]\n\n` +
+                `1. API Success Status: ${verifyResponse.data.success}\n` +
+                `2. Database user found: ${freshUserFromDB ? "YES" : "NO"}\n` +
+                `3. Database isPaid Value: ${freshUserFromDB?.isPaid}\n\n` +
+                `अगर ऊपर isPaid की वैल्यू true है, तो डेटाबेस अपडेट हो गया है!`
+              );
 
-      if (freshUserFromDB && freshUserFromDB.isPaid) {
-        localStorage.setItem('partnerUser', JSON.stringify(freshUserFromDB));
-        setIsPaid(true);
-        
-        if (setUser) {
-          setUser(freshUserFromDB); 
-        }
-        
-        // 🟢 नया अपडेट: डेटा अपडेट होने के तुरंत बाद पेज रिलोड करें
-        console.log("[FRONTEND LOG] पेमेंट सफल, पेज रिलोड कर रहे हैं...");
-        window.location.reload();
-
-      } else {
-        alert("🛑 गंभीर चेतावनी: बैकएंड ने success: true दिया, लेकिन लौटे हुए डेटा में isPaid अभी भी false या undefined है!");
-        setLoading(false);
-      }
-    } else {
-      alert("🛑 वेरिफिकेशन फेल: " + (verifyResponse.data.message || "अमान्य सिग्नेचर"));
-      setLoading(false);
-    }
-  } catch (err) {
-    console.error("[FRONTEND CATCH ERROR] Verification Request Failed:", err);
-    alert("🛑 वेरिफिकेशन सर्वर रिस्पॉन्स फेल। एरर लॉग्स देखें।");
-    setLoading(false);
-  }
-},
+              if (freshUserFromDB && freshUserFromDB.isPaid) {
+                localStorage.setItem('partnerUser', JSON.stringify(freshUserFromDB));
+                setIsPaid(true);
+                
+                if (setUser) {
+                  setUser(freshUserFromDB); 
+                }
+              } else {
+                alert("🛑 गंभीर चेतावनी: बैकएंड ने success: true दिया, लेकिन लौटे हुए डेटा में isPaid अभी भी false या undefined है!");
+                setLoading(false);
+              }
+            } else {
+              alert("🛑 वेरिफिकेशन फेल: " + (verifyResponse.data.message || "अमान्य सिग्नेचर"));
+              setLoading(false);
+            }
+          } catch (err) {
+            console.error("[FRONTEND CATCH ERROR] Verification Request Failed:", err);
+            alert("🛑 वेरिफिकेशन सर्वर रिस्पॉन्स फेल। एरर लॉग्स देखें।");
+            setLoading(false);
+          }
+        },
         prefill: {
           name: user.name || "Partner",
           email: user.email || "partner@company.com",
-          contact: "9999380378"
+          contact: user.phone || "9999380378" 
         },
         theme: {
           color: "#0284c7"
