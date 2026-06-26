@@ -240,17 +240,43 @@ export default function Login({ onLoginSuccess }) {
                 </div>
 
 
-                <div style={{ marginBottom: '12px' }}>
-      <label>Mobile Number:</label>
-      <input 
-        type="text" 
-        value={phone} 
-        onChange={(e) => setPhone(e.target.value)} 
-        placeholder="Enter 10-digit mobile number"
-        required 
-        style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} 
-      />
-    </div>
+               <div style={{ marginBottom: '12px' }}>
+  <label>Mobile Number:</label>
+  <input 
+    type="text" 
+    value={phone} 
+    onChange={(e) => {
+      const value = e.target.value;
+      // केवल नंबर्स (0-9) को अनुमति दें और 10 डिजिट तक ही सीमित रखें
+      if (/^\d*$/.test(value) && value.length <= 10) {
+        setPhone(value);
+      }
+    }} 
+    onBlur={() => {
+      // जब यूजर इनपुट बॉक्स से बाहर आए, तब चेक करें
+      if (phone.length > 0 && phone.length < 10) {
+        alert("गलत नंबर! कृपया पूरा 10 अंकों का मोबाइल नंबर दर्ज करें।");
+      }
+    }}
+    placeholder="Enter 10-digit mobile number"
+    required 
+    style={{ 
+      width: '100%', 
+      padding: '10px', 
+      marginTop: '5px', 
+      borderRadius: '4px', 
+      border: phone.length > 0 && phone.length < 10 ? '1px solid #ef4444' : '1px solid #334155', 
+      background: '#0f172a', 
+      color: '#fff' 
+    }} 
+  />
+  {/* UI पर भी तुरंत फीडबैक देने के लिए */}
+  {phone.length > 0 && phone.length < 10 && (
+    <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '5px' }}>
+      मोबाइल नंबर 10 अंकों का होना अनिवार्य है।
+    </p>
+  )}
+</div>
                 
                 
 
