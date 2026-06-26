@@ -18,6 +18,9 @@ export default function Login({ onLoginSuccess }) {
   const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [touched, setTouched] = useState(false);
+
+
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
 
   // 🟢 1. लॉगिन हैंडलर
@@ -244,7 +247,6 @@ export default function Login({ onLoginSuccess }) {
 
 
           // 1. एक नई State जोड़ें
-const [touched, setTouched] = useState(false);
 
 <div style={{ marginBottom: '12px' }}>
   <label>Mobile Number:</label>
