@@ -8,7 +8,6 @@ export default function Login({ onLoginSuccess }) {
   
   // फॉर्म स्टेट्स
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
@@ -119,7 +118,7 @@ export default function Login({ onLoginSuccess }) {
 
     setLoading(true);
     try {
-      await axios.post(`${BACKEND_URL}/auth/register`, { name, email, password, phone });
+      await axios.post(`${BACKEND_URL}/auth/register`, { name, email, password });
       alert("🎉 Account created successfully! Now login.");
       
       setIsOtpSent(false);
@@ -239,19 +238,6 @@ export default function Login({ onLoginSuccess }) {
                   <input type="text" value={name} onChange={(e) => setName(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
                 </div>
 
-                <div style={{ marginBottom: '12px' }}>
-      <label>Mobile Number:</label>
-      <input 
-        type="text" 
-        value={phone} 
-        onChange={(e) => setPhone(e.target.value)} 
-        placeholder="Enter 10-digit mobile number"
-        required 
-        style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} 
-      />
-    </div>
-
-                
                 <div style={{ marginBottom: '15px' }}>
                   <label>Set Password:</label>
                   <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '4px', border: '1px solid #334155', background: '#0f172a', color: '#fff' }} />
