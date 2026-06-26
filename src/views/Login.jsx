@@ -116,7 +116,10 @@ export default function Login({ onLoginSuccess }) {
       // अगर ओटीपी भेजा ही नहीं गया है
       return alert("Please enter your email ID and click 'Send OTP' first.");
     }
-
+    if (phone.length !== 10) {
+  alert("कृपया मान्य 10 अंकों का मोबाइल नंबर दर्ज करें।");
+  return;
+}
     setLoading(true);
     try {
       await axios.post(`${BACKEND_URL}/auth/register`, { name, email, password, phone });
