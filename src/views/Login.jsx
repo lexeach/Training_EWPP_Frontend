@@ -243,24 +243,22 @@ export default function Login({ onLoginSuccess }) {
                 </div>
 
 
-               <div style={{ marginBottom: '12px' }}>
+          // 1. एक नई State जोड़ें
+const [touched, setTouched] = useState(false);
+
+<div style={{ marginBottom: '12px' }}>
   <label>Mobile Number:</label>
   <input 
     type="text" 
     value={phone} 
     onChange={(e) => {
       const value = e.target.value;
-      // केवल नंबर्स (0-9) को अनुमति दें और 10 डिजिट तक ही सीमित रखें
       if (/^\d*$/.test(value) && value.length <= 10) {
         setPhone(value);
       }
     }} 
-    onBlur={() => {
-      // जब यूजर इनपुट बॉक्स से बाहर आए, तब चेक करें
-      if (phone.length > 0 && phone.length < 10) {
-        alert("गलत नंबर! कृपया पूरा 10 अंकों का मोबाइल नंबर दर्ज करें।");
-      }
-    }}
+    // 2. जब यूजर बॉक्स से बाहर क्लिक करेगा, तब 'touched' को true करेंगे
+    onBlur={() => setTouched(true)}
     placeholder="Enter 10-digit mobile number"
     required 
     style={{ 
@@ -268,13 +266,15 @@ export default function Login({ onLoginSuccess }) {
       padding: '10px', 
       marginTop: '5px', 
       borderRadius: '4px', 
-      border: phone.length > 0 && phone.length < 10 ? '1px solid #ef4444' : '1px solid #334155', 
+      // 3. रेड बॉर्डर तब दिखेगा जब 'touched' true हो और नंबर 10 से कम हो
+      border: (touched && phone.length !== 10) ? '1px solid #ef4444' : '1px solid #334155', 
       background: '#0f172a', 
       color: '#fff' 
     }} 
   />
-  {/* UI पर भी तुरंत फीडबैक देने के लिए */}
-  {phone.length > 0 && phone.length < 10 && (
+  
+  {/* 4. वार्निंग भी तभी दिखेगी जब यूजर बॉक्स से बाहर आ चुका हो (touched) */}
+  {touched && phone.length !== 10 && (
     <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '5px' }}>
       मोबाइल नंबर 10 अंकों का होना अनिवार्य है।
     </p>
