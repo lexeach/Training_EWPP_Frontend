@@ -86,7 +86,7 @@ export default function Profile({ user, onBack, setUser }) {
         prefill: {
           name: user.name || "Partner",
           email: user.email || "partner@company.com",
-          contact: "9999380378"
+          contact: user.phone || "9999380378"
         },
         theme: {
           color: "#0284c7"
