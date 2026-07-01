@@ -32,6 +32,13 @@ export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess }) 
   useEffect(() => {
     const verifyAccess = async () => {
       if (!currentVideo?.videoId) return;
+
+      // 🟢 Hardcoded Check: Agar sequenceOrder 1, 2, ya 3 hai, toh access true de dein
+      if (currentVideo.sequenceOrder <= 3) {
+        setHasAccess(true);
+        return;
+      }
+
       const token = localStorage.getItem('token');
       try {
         const res = await axios.get(`${BACKEND_URL}/video-access/${currentVideo.videoId}`, { 
