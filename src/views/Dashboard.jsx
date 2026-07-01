@@ -141,6 +141,7 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
               }}>
                 <VideoPlayer 
                   onQuizStateChange={handleQuizStateChange} 
+                  onProfileClick={onProfileClick}
                   onQuizSubmitSuccess={(updatedQuizResults) => {
                     const updatedUser = { ...user, quizResults: updatedQuizResults };
                     setUser(updatedUser);
