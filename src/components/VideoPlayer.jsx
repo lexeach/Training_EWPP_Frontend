@@ -75,7 +75,8 @@ export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess }) 
         <div style={{ background: '#fff', padding: '40px', borderRadius: '12px', border: '1px solid #fee2e2', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
           <h2 style={{ color: '#e11d48' }}>🔒 यह वीडियो लॉक है</h2>
           <p style={{ color: '#475569', marginBottom: '20px' }}>यह प्रीमियम वीडियो देखने के लिए कृपया ट्रेनिंग फीस का भुगतान करें।</p>
-          <button onClick={() => window.location.href = '/profile'} style={{ padding: '12px 24px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+          <button onClick={() => setCurrentView('profile')} 
+            style={{ padding: '12px 24px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
             पेमेंट पेज पर जाएं
           </button>
         </div>
