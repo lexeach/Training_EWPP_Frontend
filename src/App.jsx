@@ -114,23 +114,19 @@ function App() {
       <>
         {!user ? (
           <Login onLoginSuccess={handleLoginSuccess} />
+        ) : (!user.isPaid || currentView === 'profile') ? ( 
+          <Profile 
+            user={user} 
+            setUser={handleUserUpdateFromProfile} 
+            onBack={() => user.isPaid ? setCurrentView('dashboard') : alert("🛑 कृपया पहले फीस का भुगतान करें।")} 
+          />
         ) : (
-          /* 🟢 लॉजिक अपडेट: अगर यूजर Paid है OR 'profile' view में है, तभी Profile दिखाएं। 
-             अन्यथा, उसे Dashboard दिखाएं ताकि वो फ्री वीडियो देख सके। */
-          (currentView === 'profile') ? ( 
-            <Profile 
-              user={user} 
-              setUser={handleUserUpdateFromProfile} 
-              onBack={() => setCurrentView('dashboard')} 
-            />
-          ) : (
-            <Dashboard 
-              user={user} 
-              setUser={setUser} 
-              onLogout={handleLogout} 
-              onProfileClick={() => setCurrentView('profile')} 
-            />
-          )
+          <Dashboard 
+            user={user} 
+            setUser={setUser} 
+            onLogout={handleLogout} 
+            onProfileClick={() => setCurrentView('profile')} 
+          />
         )}
       </>
     );
