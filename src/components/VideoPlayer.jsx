@@ -21,14 +21,14 @@ export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess }) 
   const [quizData, setQuizData] = useState([]);
   const [isBuffering, setIsBuffering] = useState(false);
   
-  // 🟢 Access control states
-  const [hasAccess, setHasAccess] = useState(null); 
+  // 🟢 Access Control State
+  const [hasAccess, setHasAccess] = useState(null);
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
 
   const isGoogleDrive = currentVideo?.url?.includes('google.com') || currentVideo?.url?.includes('drive.google.com');
-  const DRIVE_REQUIRED_TIME = 15; 
+  const DRIVE_REQUIRED_TIME = 15;
 
-  // 🟢 [ACCESS CHECK]
+  // 🟢 [ACCESS CHECK EFFECT]
   useEffect(() => {
     const verifyAccess = async () => {
       if (!currentVideo?.videoId) return;
@@ -45,14 +45,10 @@ export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess }) 
     verifyAccess();
   }, [currentVideo?.videoId]);
 
-  // 📢 [FIXED] जब भी स्थानीय 'showQuiz' स्टेट बदलेगी, यह तुरंत पैरेंट को रिपोर्ट करेगा
   useEffect(() => {
-    if (onQuizStateChange) {
-      onQuizStateChange(showQuiz);
-    }
+    if (onQuizStateChange) onQuizStateChange(showQuiz);
   }, [showQuiz, onQuizStateChange]);
 
-  // वीडियो बदलते ही पुरानी स्टेट साफ करें
   useEffect(() => {
     setMaxTimeWatched(0);
     setSecondsWatched(0);
@@ -63,60 +59,87 @@ export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess }) 
     setIsBuffering(false);
   }, [currentVideo?.videoId]);
 
-  // 📝 टेस्ट लिस्ट से मैनुअल रिक्वेस्ट आने पर सेफ सिंकिंग
-  useEffect(() => {
-    const shouldStartQuiz = localStorage.getItem('autoStartQuiz');
-    if (shouldStartQuiz === 'true' && currentVideo?.quiz && Array.isArray(currentVideo.quiz) && currentVideo.quiz.length > 0) {
-      localStorage.removeItem('autoStartQuiz'); 
-      setQuizData(currentVideo.quiz);
-      setShowQuiz(true);
+  const handleTimeUpdate = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.currentTime > maxTimeWatched) {
+      if (video.currentTime - maxTimeWatched < 2) {
+        setMaxTimeWatched(video.currentTime);
+      } else {
+        video.currentTime = maxTimeWatched;
+      }
     }
-  }, [currentVideo]);
+  };
 
-  // गूगल ड्राइव टाइमर
-  useEffect(() => {
-    let interval = null;
-    if (currentVideo && isGoogleDrive && !isDriveVideoCompleted && !showQuiz) {
-      interval = setInterval(() => {
-        setSecondsWatched((prev) => {
-          if (prev + 1 >= DRIVE_REQUIRED_TIME) {
-            setIsDriveVideoCompleted(true);
-            clearInterval(interval);
-            return DRIVE_REQUIRED_TIME;
-          }
-          return prev + 1;
-        });
-      }, 1000);
+  const handleSeeking = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.currentTime > maxTimeWatched) {
+      video.currentTime = maxTimeWatched;
+      alert("🛑 सुरक्षा नियम: आप ट्रेनिंग वीडियो को आगे नहीं बढ़ा सकते।");
     }
-    return () => { if (interval) clearInterval(interval); };
-  }, [currentVideo?.videoId, isGoogleDrive, isDriveVideoCompleted, showQuiz]);
+  };
 
-  // 🟢 UI Protection Check
-  if (hasAccess === null) return <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>लोड हो रहा है...</div>;
+  const handleVideoEnded = async () => {
+    const result = await updateProgressOnBackend(currentVideo.videoId);
+    if (result) {
+      if (currentVideo.quiz && Array.isArray(currentVideo.quiz) && currentVideo.quiz.length > 0) {
+        setQuizData(currentVideo.quiz);
+        setShowQuiz(true);
+      } else {
+        alert("🎉 वीडियो समाप्त!");
+        if (videoRef.current) { videoRef.current.currentTime = 0; videoRef.current.play(); }
+      }
+    }
+  };
 
-  if (hasAccess === false) {
-    return (
-      <div style={{ padding: '40px', textAlign: 'center', background: '#fff', borderRadius: '8px', margin: '20px' }}>
-        <h2 style={{ color: '#e11d48' }}>🔒 यह वीडियो पेड है</h2>
-        <p>इस वीडियो और पूरे कोर्स को अनलॉक करने के लिए कृपया पेमेंट करें।</p>
-        <button onClick={() => window.location.href = '/profile'} style={{ padding: '10px 20px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-          अभी पेमेंट करें
-        </button>
-      </div>
-    );
-  }
+  const handleQuizSubmit = async () => {
+    const answersArray = quizData.map((_, index) => selectedAnswers[index]);
+    const result = await submitQuizOnBackend(currentVideo.videoId, answersArray);
+    if (result) {
+      if (onQuizSubmitSuccess) onQuizSubmitSuccess(result.quizResults);
+      if (result.passed) {
+        alert(`🎉 बधाई! स्कोर: ${result.score}`);
+        setShowQuiz(false);
+      } else {
+        alert("❌ फेल! पुनः प्रयास करें।");
+        setShowQuiz(false);
+      }
+    }
+  };
 
-  // --- पुराने फंक्शन्स (handleTimeUpdate, handleQuizSubmit, आदि) यहाँ वैसे ही रहने दें ---
-  
-  // (नोट: आपकी फाइल में जो 'handleTimeUpdate', 'handleVideoEnded', 'handleQuizSubmit' फंक्शन्स थे, 
-  // वे यहाँ इसके नीचे आ जाएंगे।)
+  const getEmbedUrl = (url) => {
+    let embedUrl = url;
+    if (embedUrl.includes('uc?export=download&id=')) embedUrl = embedUrl.replace('uc?export=download&id=', 'file/d/');
+    if (!embedUrl.includes('/preview')) embedUrl = embedUrl + '/preview';
+    return embedUrl;
+  };
 
-  if (!currentVideo) return <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>लोड हो रहा है...</div>;
+  // 🟢 RENDER LOGIC
+  if (hasAccess === null) return <div style={{ padding: '40px' }}>Loading...</div>;
+  if (hasAccess === false) return (
+    <div style={{ padding: '40px', textAlign: 'center' }}>
+      <h2>🔒 यह वीडियो पेड है</h2>
+      <button onClick={() => window.location.href = '/profile'}>अभी पेमेंट करें</button>
+    </div>
+  );
 
-  // ... (बाकी सारा कोड यहाँ पेस्ट कर दें)
+  if (showQuiz) return (
+    <div style={{ padding: '30px' }}>
+      <h2>📝 असेसमेंट</h2>
+      {/* Quiz UI here */}
+      <button onClick={handleQuizSubmit}>सबमिट करें</button>
+    </div>
+  );
+
   return (
-    <div style={{ flex: 1, padding: '30px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f8fafc' }}>
-      {/* आपका पुराना रेंडर कोड यहाँ... */}
+    <div style={{ padding: '30px' }}>
+      <h2>{currentVideo.title}</h2>
+      {isGoogleDrive ? (
+        <iframe src={getEmbedUrl(currentVideo.url)} style={{ width: '100%', height: '500px' }} />
+      ) : (
+        <video ref={videoRef} src={currentVideo.url} controls onTimeUpdate={handleTimeUpdate} onEnded={handleVideoEnded} />
+      )}
     </div>
   );
 }
