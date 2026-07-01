@@ -23,7 +23,8 @@ export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess, on
 
   // 🟢 एक्सेस कंट्रोल: अगर sequenceOrder 3 तक है या यूजर ने पेमेंट किया है, तो एक्सेस है
   const isFreeVideo = currentVideo?.sequenceOrder <= 3;
-  const hasAccess = user?.isPaid || isFreeVideo;
+  const hasAccess = user?.isPaid === true || isFreeVideo;
+  //const hasAccess = user?.isPaid || isFreeVideo;
 
   const isGoogleDrive = currentVideo?.url?.includes('google.com') || currentVideo?.url?.includes('drive.google.com');
   const DRIVE_REQUIRED_TIME = 15; 
