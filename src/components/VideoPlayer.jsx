@@ -22,6 +22,7 @@ export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess, on
   const [isBuffering, setIsBuffering] = useState(false);
 
   // 🟢 एक्सेस कंट्रोल: अगर sequenceOrder 3 तक है या यूजर ने पेमेंट किया है, तो एक्सेस है
+  console.log("Current User Payment Status:", user?.isPaid);
   const isFreeVideo = currentVideo?.sequenceOrder <= 3;
   const hasAccess = user?.isPaid === true || isFreeVideo;
   //const hasAccess = user?.isPaid || isFreeVideo;
