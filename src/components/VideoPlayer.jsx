@@ -6,21 +6,17 @@ export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess, on
   const { 
     currentVideo, 
     updateProgressOnBackend, 
-    submitQuizOnBackend, 
-    modules, 
-    setCurrentVideo,
     user 
   } = useContext(ProgressContext);
   
   const videoRef = useRef(null);
   const [maxTimeWatched, setMaxTimeWatched] = useState(0);
   const [showQuiz, setShowQuiz] = useState(false);
-  const [selectedAnswers, setSelectedAnswers] = useState({});
   const [quizData, setQuizData] = useState([]);
 
-  // 🟢 फिक्स: अगर user अभी तक लोड नहीं हुआ है, तो 'Locked' स्क्रीन न दिखाएं, 
-  // सिर्फ एक क्लीन लोडिंग स्क्रीन दिखाएं।
-  if (user === undefined || user === null) {
+  // 🟢 सुरक्षा का पहला स्तर: डेटा लोड होने तक केवल 'Loading...' दिखाएं
+  // undefined चेक बहुत महत्वपूर्ण है क्योंकि Provider डिफ़ॉल्ट रूप से undefined हो सकता है
+  if (user === undefined || currentVideo === undefined) {
     return (
       <div style={{ flex: 1, padding: '50px', textAlign: 'center', background: '#f8fafc', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <h2>Loading your training...</h2>
@@ -28,24 +24,22 @@ export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess, on
     );
   }
 
-  // 🟢 यहाँ अब user उपलब्ध है, अब सुरक्षित रूप से चेक करें
+  // 🟢 अब डेटा मौजूद है, एक्सेस लॉजिक चलाएं
   const isFreeVideo = currentVideo?.sequenceOrder <= 3;
   const hasAccess = user?.isPaid === true || isFreeVideo;
-
   const isGoogleDrive = currentVideo?.url?.includes('google.com') || currentVideo?.url?.includes('drive.google.com');
 
   useEffect(() => {
     if (onQuizStateChange) onQuizStateChange(showQuiz);
   }, [showQuiz, onQuizStateChange]);
 
+  // जब वीडियो बदले तो स्टेट रीसेट करें
   useEffect(() => {
     setMaxTimeWatched(0);
     setShowQuiz(false);
-    setSelectedAnswers({});
-    setQuizData([]);
   }, [currentVideo?.videoId]);
 
-  // 🟢 अगर पक्का हो गया कि access नहीं है, तभी 'Locked' दिखाएं
+  // 🟢 सुरक्षा का दूसरा स्तर: अगर एक्सेस नहीं है, तभी 'Locked' स्क्रीन दिखाएं
   if (!hasAccess) {
     return (
       <div style={{ flex: 1, padding: '50px', textAlign: 'center', background: '#f8fafc', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -63,10 +57,7 @@ export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess, on
     );
   }
 
-  if (!currentVideo) return <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>डेटा लोड हो रहा है...</div>;
-
-  // ... बाकी फंक्शन्स (handleTimeUpdate, handleVideoEnded, आदि) समान रहेंगे ...
-  
+  // वीडियो प्लेयर के फंक्शन्स
   const handleTimeUpdate = () => {
     const video = videoRef.current;
     if (!video) return;
@@ -90,14 +81,9 @@ export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess, on
 
   const handleVideoEnded = async () => {
     const result = await updateProgressOnBackend(currentVideo.videoId);
-    if (result) {
-      if (currentVideo.quiz?.length > 0) {
-        setQuizData(currentVideo.quiz);
-        setShowQuiz(true);
-      } else {
-        alert("🎉 वीडियो समाप्त!");
-        if (videoRef.current) { videoRef.current.currentTime = 0; videoRef.current.play(); }
-      }
+    if (result && currentVideo.quiz?.length > 0) {
+      setQuizData(currentVideo.quiz);
+      setShowQuiz(true);
     }
   };
 
