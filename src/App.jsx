@@ -26,15 +26,18 @@ function App() {
   const [hasSynced, setHasSynced] = useState(false);
   const [isAdminRoute, setIsAdminRoute] = useState(false);
 
-  useEffect(() => {
-    const currentPath = window.location.pathname;
-    if (currentPath === '/admin' || currentPath === '/admin/') setIsAdminRoute(true);
-    if (currentPath.includes('/reset-password/')) {
-      const parts = currentPath.split('/');
-      const token = parts[parts.length - 1];
-      if (token) setResetToken(token);
-    }
-  }, []);
+  // App.jsx में यह वाला useEffect बदलें:
+useEffect(() => {
+  const currentPath = window.location.pathname;
+  if (currentPath === '/admin' || currentPath === '/admin/') setIsAdminRoute(true);
+
+  // 🟢 नया तरीका: URL Query Parameters से टोकन लें
+  const queryParams = new URLSearchParams(window.location.search);
+  const token = queryParams.get('resetToken');
+  if (token) {
+    setResetToken(token);
+  }
+}, []);
 
   useEffect(() => {
     const fetchFreshUserOnLoad = async () => {
