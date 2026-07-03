@@ -1,5 +1,5 @@
 // frontend/src/views/Dashboard.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import VideoPlayer from '../components/VideoPlayer';
@@ -47,7 +47,8 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
     fetchLatestUserData();
   }, []);
   
-  if (isLoading) {
+  // 🟢 सुरक्षा: अगर डेटा अभी भी लोड हो रहा है, तो कोई भी कंटेंट रेंडर न करें
+  if (isLoading || !user || user.isPaid === undefined) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f172a', color: '#fff' }}>
         <h2>Loading your data...</h2>
@@ -67,7 +68,6 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
     setIsQuizActiveInPlayer(isActive);
   };
 
-  // 🟢 मोबाइल पर वीडियो सेलेक्ट होने पर ब्राउज़र विंडो को टॉप पर स्क्रॉल करने वाला फंक्शन
   const handleVideoSelect = () => {
     if (isMobile) {
       window.scrollTo({
@@ -79,7 +79,6 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
 
   return (
     <ProgressProvider user={user} setUser={setUser}>
-      {/* मुख्य आउटर डिब्बा - डेस्कटॉप पर 100vh, मोबाइल पर आज़ाद (auto) */}
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
@@ -89,7 +88,6 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
         backgroundColor: '#f8fafc' 
       }}>
         
-        {/* TOP HEADER */}
         <Header 
           user={user} 
           onLogout={onLogout} 
@@ -100,7 +98,6 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
           onBackFromQuiz={handleBackToCourseFromQuiz}
         />
         
-        {/* MAIN HUB */}
         <div style={{ 
             display: 'flex', 
             flexDirection: isMobile ? 'column' : 'row', 
@@ -112,28 +109,25 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
           
           {currentView === 'training' && (
             <>
-              {/* 📑 MODULE LIST / SIDEBAR (डेस्कटॉप पर बाईं ओर रहेगा order: 1 की वजह से) */}
               {!isQuizActiveInPlayer && (
                 <div style={{ 
                     width: isMobile ? '100%' : '320px', 
-                    order: isMobile ? 2 : 1, // डेस्कटॉप पर पहले नंबर पर आएगा
+                    order: isMobile ? 2 : 1, 
                     height: isMobile ? 'auto' : '100%', 
                     overflowY: isMobile ? 'visible' : 'auto', 
                     backgroundColor: '#ffffff',
                     borderTop: isMobile ? '1px solid #e2e8f0' : 'none',
                     borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
-                    flexShrink: 0 // 🟢 डेस्कटॉप पर प्लेयर इसे दबाकर छोटा नहीं कर पाएगा
+                    flexShrink: 0 
                 }}>
-                  {/* 🟢 user स्टेट यहाँ पास की गई है ताकि Sidebar टेस्ट पास स्टेटस चेक कर सके */}
                   <Sidebar onVideoSelect={handleVideoSelect} isMobile={isMobile} user={user} />
                 </div>
               )}
 
-              {/* 📹 VIDEO PLAYER (डेस्कटॉप पर दाईं ओर रहेगा order: 2 की वजह से) */}
               <div style={{ 
                   flex: isMobile ? '0 0 auto' : '1', 
-                  width: isMobile ? '100%' : 'auto', // 🟢 डेस्कटॉप पर विड्थ 'auto' रखी ताकि यह बची हुई जगह ले, साइडबार को बाहर न धकेले
-                  order: isMobile ? 1 : 2, // डेस्कटॉप पर दूसरे नंबर पर आएगा
+                  width: isMobile ? '100%' : 'auto', 
+                  order: isMobile ? 1 : 2, 
                   background: '#000',
                   position: 'relative',
                   height: isMobile ? 'auto' : '100%',
@@ -152,7 +146,6 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
             </>
           )}
 
-          {/* बाकी व्यूज के लिए (Tests / Stats) */}
           {currentView !== 'training' && (
             <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '15px' : '30px', height: isMobile ? 'auto' : '100%' }}>
               {currentView === 'tests' && (
@@ -166,7 +159,7 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
                     <button onClick={() => setCurrentView('training')} style={{ background: '#0284c7', color: '#fff', padding: '8px 14px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>◀️ वापस</button>
                   </div>
                   <div style={{ background: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '15px', overflowX: 'auto' }}>
-                    {results.length === 0 ? <p>कोई टेस्ट रिकॉर्ड नहीं मिला。</p> : 
+                    {results.length === 0 ? <p>कोई टेस्ट रिकॉर्ड नहीं मिला।</p> : 
                       <table style={{ width: '100%', textAlign: 'left', minWidth: '400px' }}>
                         <thead><tr><th>वीडियो कोड</th><th>स्कोर</th><th>कुल प्रश्न</th><th>स्थिति</th></tr></thead>
                         <tbody>
@@ -181,7 +174,6 @@ export default function Dashboard({ user: initialUser, setUser: setGlobalUser, o
               )}
             </div>
           )}
-
         </div>
       </div>
     </ProgressProvider>
