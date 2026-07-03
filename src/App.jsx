@@ -83,7 +83,7 @@ useEffect(() => {
     setUser(userData);
     localStorage.setItem('partnerUser', JSON.stringify(userData));
     setHasSynced(false);
-    setCurrentView(userData.isPaid ? 'dashboard' : 'profile');
+    setCurrentView('dashboard');
   };
 
   const handleLogout = () => {
