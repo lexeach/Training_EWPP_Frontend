@@ -10,6 +10,18 @@ import AdminPanel from './views/AdminPanel';
 import TestListPage from './views/TestListPage';
 import Footer from './components/Footer'; // 🟢 फुटर इम्पोर्टेड
 
+// App.jsx में
+const [appLoading, setAppLoading] = useState(true);
+
+useEffect(() => {
+  // जब तक यूजर डेटा और मॉड्यूल्स फेच न हो जाएं
+  if (user && modules.length > 0) {
+    setAppLoading(false);
+  }
+}, [user, modules]);
+
+if (appLoading) return <Loader />; // एक सुंदर लोडर कॉम्पोनेंट दिखाएं
+
 function App() {
   const [user, setUser] = useState(() => {
     try {
