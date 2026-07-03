@@ -1,3 +1,4 @@
+// frontend/src/context/ProgressContext.js
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios'; 
 import Loader from '../components/Loader'; 
@@ -22,7 +23,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
   // 🎯 बेस यूआरएल
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com/api";
 
-  // यूज़र स्टेट चेंज होने पर प्रोग्रेस को सिंक रखना
+  // 🟢 यह useEffect सुनिश्चित करेगा कि जब भी user प्रॉप बदले (जैसे पेमेंट के बाद), प्रोवाइडर का स्टेट और user अपडेट हो जाए
   useEffect(() => {
     if (user) {
       if (Array.isArray(user.completedVideos)) setCompletedVideos(user.completedVideos);
@@ -40,7 +41,6 @@ export const ProgressProvider = ({ children, user, setUser }) => {
         }
 
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        // मुख्य रूप से /api/modules पर ट्रम्प करेगा
         const response = await axios.get(`${BACKEND_URL}/modules`, config);
         
         if (response.data && Array.isArray(response.data) && response.data.length > 0) {
@@ -111,7 +111,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
     }
   };
 
-  // 2️⃣ क्विज़ सबमिशन (स्मार्ट राउट फॉलबैक के साथ फिक्स्ड 🚀)
+  // 2️⃣ क्विज़ सबमिशन
   const submitQuizOnBackend = async (videoId, answersArray) => {
     try {
       setLoadingMessage("आपके उत्तरों की जांच की जा रही है, कृपया रुकें...");
@@ -123,15 +123,12 @@ export const ProgressProvider = ({ children, user, setUser }) => {
 
       let response;
       try {
-        // ट्राय 1: पहले सीधे /api/submit-quiz पर भेजकर देखते हैं
         response = await axios.post(`${BACKEND_URL}/submit-quiz`, payload, config);
       } catch (err) {
-        // ट्राय 2: अगर पहला रूट 404 मारता है, तो तुरंत बैकअप रूट /api/training/submit-quiz पर भेजेगा!
         if (err.response && err.response.status === 404) {
-          console.log("[Route Redirect] /api/submit-quiz नहीं मिला, बैकअप राउट आज़मा रहे हैं...");
           response = await axios.post(`${BACKEND_URL}/training/submit-quiz`, payload, config);
         } else {
-          throw err; // अगर 404 के अलावा कोई और एरर है तो उसे कैच में भेजें
+          throw err;
         }
       }
 
@@ -174,7 +171,8 @@ export const ProgressProvider = ({ children, user, setUser }) => {
       currentUnlockedVideo,
       updateProgressOnBackend,
       submitQuizOnBackend,
-      loading
+      loading,
+      user // 🟢 कॉन्टेक्स्ट में यूजर पास किया ताकि VideoPlayer लेटेस्ट डेटा देख सके
     }}>
       {globalLoading && <Loader message={loadingMessage} />}
       {children}
