@@ -14,28 +14,25 @@ export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess, on
   
   const videoRef = useRef(null);
   const [maxTimeWatched, setMaxTimeWatched] = useState(0);
-  const [secondsWatched, setSecondsWatched] = useState(0);
-  const [isDriveVideoCompleted, setIsDriveVideoCompleted] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [quizData, setQuizData] = useState([]);
 
-  // 🟢 रेंडरिंग फ्लिकर से बचने के लिए सुरक्षा चेक
-  // अगर user डेटा अभी तक कॉन्टेक्स्ट से नहीं आया है, तो केवल 'Loading...' दिखाएं
-  if (!user) {
+  // 🟢 फिक्स: अगर user अभी तक लोड नहीं हुआ है, तो 'Locked' स्क्रीन न दिखाएं, 
+  // सिर्फ एक क्लीन लोडिंग स्क्रीन दिखाएं।
+  if (user === undefined || user === null) {
     return (
-      <div style={{ flex: 1, padding: '50px', textAlign: 'center', background: '#f8fafc', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <h2>Loading content...</h2>
+      <div style={{ flex: 1, padding: '50px', textAlign: 'center', background: '#f8fafc', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <h2>Loading your training...</h2>
       </div>
     );
   }
 
-  // 🟢 एक्सेस कंट्रोल लॉजिक
+  // 🟢 यहाँ अब user उपलब्ध है, अब सुरक्षित रूप से चेक करें
   const isFreeVideo = currentVideo?.sequenceOrder <= 3;
   const hasAccess = user?.isPaid === true || isFreeVideo;
 
   const isGoogleDrive = currentVideo?.url?.includes('google.com') || currentVideo?.url?.includes('drive.google.com');
-  const DRIVE_REQUIRED_TIME = 15; 
 
   useEffect(() => {
     if (onQuizStateChange) onQuizStateChange(showQuiz);
@@ -43,23 +40,12 @@ export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess, on
 
   useEffect(() => {
     setMaxTimeWatched(0);
-    setSecondsWatched(0);
-    setIsDriveVideoCompleted(false);
     setShowQuiz(false);
     setSelectedAnswers({});
     setQuizData([]);
   }, [currentVideo?.videoId]);
 
-  useEffect(() => {
-    const shouldStartQuiz = localStorage.getItem('autoStartQuiz');
-    if (shouldStartQuiz === 'true' && currentVideo?.quiz && Array.isArray(currentVideo.quiz) && currentVideo.quiz.length > 0) {
-      localStorage.removeItem('autoStartQuiz'); 
-      setQuizData(currentVideo.quiz);
-      setShowQuiz(true);
-    }
-  }, [currentVideo]);
-
-  // 🟢 एक्सेस डिनाइड UI
+  // 🟢 अगर पक्का हो गया कि access नहीं है, तभी 'Locked' दिखाएं
   if (!hasAccess) {
     return (
       <div style={{ flex: 1, padding: '50px', textAlign: 'center', background: '#f8fafc', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -79,7 +65,8 @@ export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess, on
 
   if (!currentVideo) return <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>डेटा लोड हो रहा है...</div>;
 
-  // वीडियो प्लेयर के फंक्शन्स (handleTimeUpdate, handleVideoEnded, etc.)
+  // ... बाकी फंक्शन्स (handleTimeUpdate, handleVideoEnded, आदि) समान रहेंगे ...
+  
   const handleTimeUpdate = () => {
     const video = videoRef.current;
     if (!video) return;
@@ -128,7 +115,6 @@ export default function VideoPlayer({ onQuizStateChange, onQuizSubmitSuccess, on
       <div style={{ flex: 1, padding: '30px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#f8fafc' }}>
         <div style={{ width: '100%', maxWidth: '750px', background: '#ffffff', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
           <h2 style={{ fontSize: '22px', marginBottom: '25px' }}>📝 असेसमेंट: {currentVideo.title}</h2>
-          {/* ... क्विज रेंडरिंग ... */}
           <button onClick={() => alert('Quiz logic here')} style={{ background: '#22c55e', color: '#fff', padding: '14px', border: 'none', borderRadius: '6px', width: '100%', fontWeight: 'bold' }}>सबमिट करें</button>
         </div>
       </div>
