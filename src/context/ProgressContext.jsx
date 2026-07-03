@@ -40,7 +40,6 @@ export const ProgressProvider = ({ children, user, setUser }) => {
         }
 
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        // मुख्य रूप से /api/modules पर ट्रम्प करेगा
         const response = await axios.get(`${BACKEND_URL}/modules`, config);
         
         if (response.data && Array.isArray(response.data) && response.data.length > 0) {
@@ -111,7 +110,7 @@ export const ProgressProvider = ({ children, user, setUser }) => {
     }
   };
 
-  // 2️⃣ क्विज़ सबमिशन (स्मार्ट राउट फॉलबैक के साथ फिक्स्ड 🚀)
+  // 2️⃣ क्विज़ सबमिशन
   const submitQuizOnBackend = async (videoId, answersArray) => {
     try {
       setLoadingMessage("आपके उत्तरों की जांच की जा रही है, कृपया रुकें...");
@@ -123,15 +122,12 @@ export const ProgressProvider = ({ children, user, setUser }) => {
 
       let response;
       try {
-        // ट्राय 1: पहले सीधे /api/submit-quiz पर भेजकर देखते हैं
         response = await axios.post(`${BACKEND_URL}/submit-quiz`, payload, config);
       } catch (err) {
-        // ट्राय 2: अगर पहला रूट 404 मारता है, तो तुरंत बैकअप रूट /api/training/submit-quiz पर भेजेगा!
         if (err.response && err.response.status === 404) {
-          console.log("[Route Redirect] /api/submit-quiz नहीं मिला, बैकअप राउट आज़मा रहे हैं...");
           response = await axios.post(`${BACKEND_URL}/training/submit-quiz`, payload, config);
         } else {
-          throw err; // अगर 404 के अलावा कोई और एरर है तो उसे कैच में भेजें
+          throw err;
         }
       }
 
@@ -174,7 +170,9 @@ export const ProgressProvider = ({ children, user, setUser }) => {
       currentUnlockedVideo,
       updateProgressOnBackend,
       submitQuizOnBackend,
-      loading
+      loading,
+      user,    // 🟢 यहाँ user ऐड कर दिया
+      setUser  // 🟢 यहाँ setUser ऐड कर दिया
     }}>
       {globalLoading && <Loader message={loadingMessage} />}
       {children}
