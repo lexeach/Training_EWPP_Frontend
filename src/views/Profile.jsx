@@ -18,9 +18,9 @@ export default function Profile({ user, onBack, setUser }) {
       const razorpayKey = keyResponse.data.key;
 
       const orderResponse = await axios.post(`${BACKEND_URL}/payment/order`, {
-        amount: 3,
+        amount: 350,
         //amount: 350,
-        // update amount on 21, 133 & 153 line also
+        // update amount on 21, 134 & 153 line also
         userId: user._id
       });
 
@@ -131,7 +131,7 @@ export default function Profile({ user, onBack, setUser }) {
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '30px', borderRadius: '8px', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
           <h3 style={{ marginTop: 0, color: '#0f172a' }}>💳 Training Fee Activation (Razorpay Instant Pay)</h3>
           <p style={{ color: '#64748b', maxWidth: '500px', margin: '10px auto 25px auto' }}>
-            To unlock all video modules and claim the certificate after training, you need to make a secure one-time payment of <strong>₹3/-</strong>.
+            To unlock all video modules and claim the certificate after training, you need to make a secure one-time payment of <strong>₹350/-</strong>.
           </p>
           
           <button 
@@ -150,7 +150,7 @@ export default function Profile({ user, onBack, setUser }) {
               transition: 'all 0.2s'
             }}
           >
-            {loading ? 'The process is starting....' : '🔒 Pay Now ₹3'}
+            {loading ? 'The process is starting....' : '🔒 Pay Now ₹350'}
           </button>
         </div>
       )}
