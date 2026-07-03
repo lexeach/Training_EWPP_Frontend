@@ -1,1 +1,1 @@
-to update payment amount of training fee updtae videoplayer.js
+to update number of free video update videoplayer.js
