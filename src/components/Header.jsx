@@ -35,7 +35,7 @@ export default function Header({
         onClick={!isQuizActive ? (onHomeClick || (() => window.location.reload())) : undefined} 
       >
         <h2 style={{ margin: 0, color: '#38bdf8', fontSize: '20px' }}>EWPP Training</h2>
-        //{!isMobile && <span style={{ fontSize: '12px', background: '#334155', padding: '3px 8px', borderRadius: '4px' }}>Portal</span>}
+        
       </div>
       
       {/* ⚙️ बटन्स एरिया */}
@@ -70,12 +70,15 @@ export default function Header({
               {isMobile ? '📝 टेस्ट' : '📝 Online test list'}
             </button>
 
-            <span 
+            </button 
               onClick={onProfileClick}
-              style={{ fontSize: '14px', cursor: 'pointer', padding: '5px', borderRadius: '4px' }}
+              style={{
+                background: '#58038a', color: '#fff', border: 'none', padding: '7px 12px', 
+                borderRadius: '4px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer'
+              }}
             >
               👤 {isMobile ? '' : <>ROFILE: <strong>{user?.name || 'Gautam'}</strong></>}
-            </span>
+            </button>
             
             <button 
               onClick={onLogout}
