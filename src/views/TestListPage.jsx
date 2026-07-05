@@ -4,16 +4,12 @@ import { ProgressContext } from '../context/ProgressContext';
 export default function TestListPage({ user, onBack, progressData }) {
   const context = useContext(ProgressContext) || {};
   
-  // 🟢 एडमिन मोड या यूजर मोड के हिसाब से modules तय करें
-  // अगर progressData (Admin) मौजूद है तो उसे लें, वरना Context का इस्तेमाल करें
-  const modules = progressData && progressData.length > 0 
-    ? progressData 
-    : (Array.isArray(context.modules) ? context.modules : []);
-
-  // 🟢 अगर 'user' प्रॉप्स में है (Admin mode), तो उसका इस्तेमाल करें, वरना Context का
-  const currentUser = user || context.user || {};
-  const completedVideos = Array.isArray(currentUser.completedVideos) ? currentUser.completedVideos : [];
-  const userResults = Array.isArray(currentUser.quizResults) ? currentUser.quizResults : [];
+  // 🟢 अगर 'user' प्रॉप आया है, तो उसी का डेटा यूज़ करें, वरना Context का
+  const userData = user || context.user || {};
+  
+  // 🟢 मॉड्यूल के लिए: अगर एडमिन मोड है (progressData मौजूद है), तो उसका इस्तेमाल करें
+  const modules = progressData || context.modules || [];
+  const completedVideos = userData.completedVideos || [];  const userResults = Array.isArray(currentUser.quizResults) ? currentUser.quizResults : [];
   
   const setCurrentVideo = context.setCurrentVideo || (() => {});
 
