@@ -45,12 +45,10 @@ export default function TestListPage({ user, onBack, progressData }) {
 
   // 2. डिस्प्ले लिस्ट तैयार करना
   if (completedVideos.length > 0) {
-    // केवल वही वीडियोस लें जो कंप्लीट हो चुके हैं
     completedVideos.forEach(vidId => {
       const videoObj = masterVideosMap[vidId];
       const quizInfo = quizResults.find(q => q && String(q.videoId).trim() === String(vidId).trim());
 
-      // वीडियो नाम का निर्धारण (अगर मास्टर लिस्ट से नहीं मिला तो डिफॉल्ट हार्डकोडेड नाम)
       let customTitle = videoObj?.title || videoObj?.name || vidId;
       if (!videoObj) {
         if (vidId === "m1s1-v1") customTitle = "[m1s1-v1] Exowa क्या है?";
@@ -72,7 +70,6 @@ export default function TestListPage({ user, onBack, progressData }) {
       });
     });
   } else if (quizResults.length > 0 && isAdmin) {
-    // फॉलबैक एडमिन के लिए अगर कंप्लीट वीडियो ऐरे खाली मिले
     displayTests = quizResults.map(q => {
       let customTitle = q.videoId;
       if (q.videoId === "m1s1-v1") customTitle = "[m1s1-v1] Exowa क्या है?";
@@ -94,12 +91,9 @@ export default function TestListPage({ user, onBack, progressData }) {
     });
   }
 
-  // 🟢 यूजर के लिए सीधा ओरिजिनल टेस्ट विंडो ट्रिगर करने वाला फंक्शन
   const handleStartTest = (videoObj) => {
     if (videoObj && typeof setCurrentVideo === 'function') {
-      // 💡 वीडियो प्लेयर को सिग्नल देने के लिए लोकलस्टोरेज में फ्लैग सेट करें
       localStorage.setItem('autoStartQuiz', 'true'); 
-      
       setCurrentVideo(videoObj);
       if (typeof onBack === 'function') onBack();
     }
@@ -108,6 +102,33 @@ export default function TestListPage({ user, onBack, progressData }) {
   return (
     <div style={{ padding: '15px', maxWidth: '1000px', margin: '0 auto', boxSizing: 'border-box', fontFamily: 'sans-serif' }}>
       
+      {/* 👤 एडमिन के लिए पार्टनर डिटेल्स कार्ड (केवल एडमिन पैनल पर दिखेगा) */}
+      {isAdmin && user && (
+        <div style={{ 
+          backgroundColor: '#f8fafc', 
+          border: '1px solid #cbd5e1', 
+          borderRadius: '8px', 
+          padding: '16px', 
+          marginBottom: '20px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+        }}>
+          <h4 style={{ margin: '0 0 10px 0', color: '#475569', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            👤 पार्टनर क्रेडेंशियल्स (Partner Details)
+          </h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', fontSize: '15px' }}>
+            <p style={{ margin: 0, color: '#1e293b' }}>
+              <strong>नाम:</strong> <span style={{ color: '#0284c7', fontWeight: '600' }}>{user.name || ' उपलब्ध नहीं'}</span>
+            </p>
+            <p style={{ margin: 0, color: '#1e293b' }}>
+              <strong>ईमेल:</strong> <span style={{ color: '#334155' }}>{user.email || ' उपलब्ध नहीं'}</span>
+            </p>
+            <p style={{ margin: 0, color: '#1e293b' }}>
+              <strong>मोबाइल/फ़ोन:</strong> <span style={{ color: '#334155' }}>{user.phone || user.mobile || ' उपलब्ध नहीं'}</span>
+            </p>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '10px', flexWrap: 'wrap' }}>
         <h2 style={{ margin: 0, color: '#1e293b', fontSize: '20px', fontWeight: '700' }}>
           📝 {isAdmin ? 'पार्टनर ऑनलाइन टेस्ट लिस्ट' : 'आपकी ऑनलाइन टेस्ट लिस्ट'} ({displayTests.length})
@@ -179,7 +200,6 @@ export default function TestListPage({ user, onBack, progressData }) {
                   </td>
                   <td style={{ padding: '14px', textAlign: 'center' }}>
                     {isAdmin ? (
-                      /* 🔒 एडमिन के लिए लॉक बटन (पॉप-अप नहीं आएगा) */
                       <button 
                         style={{ padding: '8px 14px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'not-allowed', color: '#94a3b8', fontSize: '13px', fontWeight: 'bold' }} 
                         disabled
@@ -187,7 +207,6 @@ export default function TestListPage({ user, onBack, progressData }) {
                         Retest 🔄
                       </button>
                     ) : (
-                      /* 🔓 यूजर के लिए सीधे वीडियो/क्विज विंडो खोलने वाला एक्टिव बटन */
                       <button 
                         onClick={() => handleStartTest(test.rawVideo)}
                         style={{ 
