@@ -18,7 +18,7 @@ export default function AdminPanel({ onBack }) {
 
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com";
 
-  // 1. Sabhi Users aur Modules ka Course Structure load karna
+  // 1. Sabhi Users aur Live Data load karna
   const loadAllUsers = async (keyToUse) => {
     const key = keyToUse || secretKey;
     if (!key) return;
@@ -28,20 +28,15 @@ export default function AdminPanel({ onBack }) {
       // Users list fetch karein
       const response = await axios.post(`${BACKEND_URL}/api/admin/users`, { secretKey: key });
       
-      // 🟢 फिक्स: TestListPage को काम करने के लिए मास्टर कोर्स स्ट्रक्चर (मॉड्यूल्स) चाहिए।
-      // इसलिए हम सीधे ट्रेनिंग मॉड्यूल्स वाले रूट को कॉल कर रहे हैं ताकि टाइटल और स्ट्रक्चर लाइव मिल सके।
-      const modulesRes = await axios.get(`${BACKEND_URL}/api/modules`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } // यदि यह रूट प्रोटेक्टेड है
-      });
+      // 🟢 मास्टर फिक्स: /api/modules पर 401 एरर आ रहा था। 
+      // इसलिए हम एडमिन के ही खुद के /api/admin/get-user-progress रूट का उपयोग करेंगे जो बिना टोकन के लाइव चल रहा है।
+      const progressRes = await axios.get(`${BACKEND_URL}/api/admin/get-user-progress`);
       
       if (response.data.success) setUsers(response.data.users);
       
-      // मॉड्यूल्स का डेटा संभालें चाहे वह डायरेक्ट ऐरे हो या ऑब्जेक्ट के अंदर .modules ऐरे हो
-      if (modulesRes.data) {
-        const masterModules = Array.isArray(modulesRes.data) 
-          ? modulesRes.data 
-          : (modulesRes.data.modules || []);
-        setProgressData(masterModules);
+      if (progressRes.data.success && Array.isArray(progressRes.data.data)) {
+        // प्रोग्रेस डेटा को सुरक्षित रखें
+        setProgressData(progressRes.data.data);
       }
     } catch (error) {
       console.error("डेटा लोड करने में विफल:", error);
@@ -78,7 +73,7 @@ export default function AdminPanel({ onBack }) {
           console.log("✅ यूजर का प्रोग्रेस ऐरे फॉर्मेट में मिल गया:", userLiveProgress);
           setSelectedUserProgress({
             ...userItem,
-            // 🟢 यहाँ सीधे असली ऐरे पास हो रहे हैं, फालतू की 'quizScore: 0' फील्ड पूरी तरह बायपास हो जाएगी
+            // सीधे असली ऐरे पास हो रहे हैं, फालतू की 'quizScore: 0' फील्ड पूरी तरह बाईपास होगी
             completedVideos: userLiveProgress.completedVideos || [],
             quizResults: userLiveProgress.quizResults || []
           });
@@ -134,7 +129,7 @@ export default function AdminPanel({ onBack }) {
     }
   };
 
-  // ✅ मुख्य रेंडरिंग लॉजिक (Ternary Operator `? :` ke sath)
+  // ✅ मुख्य रेंडरिंग लॉजिक
   return (
     <>
       {selectedUser ? (
@@ -152,7 +147,7 @@ export default function AdminPanel({ onBack }) {
               ⏳ यूज़र का प्रोग्रेस डेटा लोड हो रहा है, कृपया प्रतीक्षा करें...
             </div>
           ) : (
-            /* 🟢 प्रगति डेटा के रूप में अब हम सही मास्टर कोर्स स्ट्रक्चर भेज रहे हैं */
+            /* 🟢 हम सीधे selectedUserProgress को ही पास कर रहे हैं, जो TestListPage को लाइव री-रेंडर करने की शक्ति देगा */
             <TestListPage 
               user={selectedUserProgress} 
               onBack={() => { setSelectedUser(null); setSelectedUserProgress(null); }} 
