@@ -72,21 +72,19 @@ export default function AdminPanel({ onBack }) {
   };
 
   // 🟢 अगर कोई यूज़र सेलेक्ट किया गया है, तो उसे TestListPage में प्रोग्रेस डेटा के साथ भेजें
-  if (selectedUser) {
-    return (
-      <div style={{ padding: '30px', maxWidth: '1100px', margin: '20px auto' }}>
-        <button onClick={() => setSelectedUser(null)} style={{ padding: '8px 16px', background: '#475569', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px' }}>
-          ← वापस एडमिन लिस्ट पर
-        </button>
-        {/* यहाँ progressData पास कर दिया गया है */}
-        <TestListPage 
-          user={selectedUser} 
-          onBack={() => setSelectedUser(null)} 
-          progressData={progressData} 
-        />
-      </div>
-    );
-  }
+ {selectedUser && (
+  <div style={{ padding: '30px', maxWidth: '1100px', margin: '20px auto' }}>
+    <button onClick={() => setSelectedUser(null)}>← वापस</button>
+    
+    {/* 🟢 'user' और 'progressData' प्रॉप्स पास करें */}
+    <TestListPage 
+      user={selectedUser} 
+      onBack={() => setSelectedUser(null)} 
+      // सुनिश्चित करें कि progressData में वह डेटा है जो आपने backend से fetched किया है
+      progressData={progressData} 
+    />
+  </div>
+)}
 
   return (
     <div style={{ padding: '30px', maxWidth: '1100px', margin: '20px auto', color: '#1e293b', fontFamily: 'sans-serif' }}>
