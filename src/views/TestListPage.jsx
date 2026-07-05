@@ -6,9 +6,13 @@ export default function TestListPage({ user, onBack, progressData }) {
   // 🔒 कांटेक्स्ट से डेटा निकालते समय ही डिफ़ॉल्ट वैल्यूज सेट कर दीं
   const context = useContext(ProgressContext) || {};
 
+  const context = useContext(ProgressContext) || {};
+  
+  // 🟢 एडमिन मोड के लिए 'progressData' का इस्तेमाल करें
+  const modules = progressData ? (progressData.modules || []) : (Array.isArray(context.modules) ? context.modules : []);
+  const completedVideos = user?.completedVideos || [];
+  
 
- const completedVideos = user?.completedVideos || (Array.isArray(context.completedVideos) ? context.completedVideos : []);
- const modules = progressData ? (progressData.modules || []) : (Array.isArray(context.modules) ? context.modules : []);
   const setCurrentVideo = context.setCurrentVideo || (() => {});
   
 
