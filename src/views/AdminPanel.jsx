@@ -26,11 +26,10 @@ export default function AdminPanel({ onBack }) {
       const progressRes = await axios.get(`${BACKEND_URL}/api/admin/get-user-progress`);
       
       if (response.data.success) setUsers(response.data.users);
-      if (progressRes.data.success) setProgressData(progressRes.data.data);
+      // यहाँ सुनिश्चित करें कि प्रोग्रेस डेटा सही फॉर्मेट में आ रहा है
+      if (progressRes.data.success) setProgressData(progressRes.data.data); 
     } catch (error) {
       console.error("डेटा लोड करने में विफल:", error);
-    } finally {
-      setFetchingUsers(false);
     }
   };
 
