@@ -1,19 +1,22 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext } from 'react';
 import { ProgressContext } from '../context/ProgressContext';
 
 export default function TestListPage({ user, onBack, progressData }) {
   const context = useContext(ProgressContext) || {};
   
-  // 🟢 अगर 'user' प्रॉप आया है, तो उसी का डेटा यूज़ करें, वरना Context का
-  const userData = user || context.user || {};
-  
-  // 🟢 मॉड्यूल के लिए: अगर एडमिन मोड है (progressData मौजूद है), तो उसका इस्तेमाल करें
-  const modules = progressData || context.modules || [];
-  const completedVideos = userData.completedVideos || [];  const userResults = Array.isArray(currentUser.quizResults) ? currentUser.quizResults : [];
+  // 🟢 एडमिन मोड या यूजर मोड के हिसाब से modules और user डेटा तय करें
+  const modules = (progressData && progressData.length > 0) 
+    ? progressData 
+    : (Array.isArray(context.modules) ? context.modules : []);
+
+  // ✅ 'currentUser' को यहाँ डिफाइन किया गया है ताकि एरर न आए
+  const currentUser = user || context.user || {};
+  const completedVideos = Array.isArray(currentUser.completedVideos) ? currentUser.completedVideos : [];
+  const userResults = Array.isArray(currentUser.quizResults) ? currentUser.quizResults : [];
   
   const setCurrentVideo = context.setCurrentVideo || (() => {});
 
-  // 🛡️ सुरक्षित वीडियो लिस्ट फ़िल्टरिंग
+  // 🛡️ वीडियो लिस्ट फ़िल्टरिंग
   let watchedVideosList = [];
   try {
     const allVideos = [];
@@ -29,17 +32,14 @@ export default function TestListPage({ user, onBack, progressData }) {
 
     watchedVideosList = allVideos.filter(v => v && v.videoId && completedVideos.includes(v.videoId));
   } catch (err) {
-    console.error("❌ TestListPage में वीडियो लिस्ट बनाते समय एरर:", err);
+    console.error("❌ एरर:", err);
   }
 
   const handleStartTest = (video) => {
-    // एडमिन पैनल में 'Give Test' पर क्लिक करने पर क्या होना चाहिए? 
-    // अगर आप एडमिन को टेस्ट नहीं देने देना चाहते, तो यहाँ रोकें:
     if (user) {
         alert("एडमिन मोड में आप टेस्ट नहीं दे सकते।");
         return;
     }
-    
     if (video && typeof setCurrentVideo === 'function') {
       localStorage.setItem('autoStartQuiz', 'true'); 
       setCurrentVideo(video);
@@ -71,8 +71,9 @@ export default function TestListPage({ user, onBack, progressData }) {
             </thead>
             <tbody>
               {watchedVideosList.map((video) => {
+                // यहाँ अब currentUser सुरक्षित है
                 const testResult = userResults.find(r => 
-                    String(r.videoId).trim() === String(video.videoId).trim() && 
+                    r && String(r.videoId).trim() === String(video.videoId).trim() && 
                     (r.passed === true || r.passed === 'true')
                 );
 
