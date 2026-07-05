@@ -27,11 +27,22 @@ export default function AdminPanel({ onBack }) {
     try {
       // Users list fetch karein
       const response = await axios.post(`${BACKEND_URL}/api/admin/users`, { secretKey: key });
-      // Course ke saare modules/videos fetch karein jo TestListPage me dikhane hain
-      const progressRes = await axios.get(`${BACKEND_URL}/api/admin/get-user-progress`);
+      
+      // 🟢 फिक्स: TestListPage को काम करने के लिए मास्टर कोर्स स्ट्रक्चर (मॉड्यूल्स) चाहिए।
+      // इसलिए हम सीधे ट्रेनिंग मॉड्यूल्स वाले रूट को कॉल कर रहे हैं ताकि टाइटल और स्ट्रक्चर लाइव मिल सके।
+      const modulesRes = await axios.get(`${BACKEND_URL}/api/modules`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } // यदि यह रूट प्रोटेक्टेड है
+      });
       
       if (response.data.success) setUsers(response.data.users);
-      if (progressRes.data.success) setProgressData(progressRes.data.data);
+      
+      // मॉड्यूल्स का डेटा संभालें चाहे वह डायरेक्ट ऐरे हो या ऑब्जेक्ट के अंदर .modules ऐरे हो
+      if (modulesRes.data) {
+        const masterModules = Array.isArray(modulesRes.data) 
+          ? modulesRes.data 
+          : (modulesRes.data.modules || []);
+        setProgressData(masterModules);
+      }
     } catch (error) {
       console.error("डेटा लोड करने में विफल:", error);
     } finally {
@@ -46,19 +57,17 @@ export default function AdminPanel({ onBack }) {
   }, [secretKey]);
 
   // 2. View Details click karne par Particular User ka Live Progress prapt (fetch) karna
- const handleViewDetails = async (userItem) => {
+  const handleViewDetails = async (userItem) => {
     setSelectedUser(userItem);
     setLoadingProgress(true);
     setSelectedUserProgress(null);
 
     try {
-      // 🟢 तरीका 1: पूरे ऐरे में ढूंढने के बजाय सीधे उसी यूजर के प्रोग्रेस रूट को हिट करें
-      // अगर आपके पास /api/admin/get-user-progress/:userId जैसा रूट है तो उसे यूज़ करें
+      // बैकएंड के नए रूट से डेटा मंगाएं जिसमें फुल ऐरे मौजूद हैं
       const res = await axios.get(`${BACKEND_URL}/api/admin/get-user-progress`);
       
       if (res.data.success && Array.isArray(res.data.data)) {
-        // 🔍 ध्यान दें: यहाँ चेक करें कि डेटाबेस में फील्ड का नाम क्या है!
-        // अगर प्रोग्रेस ऑब्जेक्ट में 'email' के बजाय 'userId' या 'user' है, तो उसे मैच करें
+        // प्रोग्रेस डेटा में से इस स्पेसिफिक यूजर को ढूंढें
         const userLiveProgress = res.data.data.find(p => 
           (p.email && p.email === userItem.email) || 
           (p.userId && p.userId === userItem._id) || 
@@ -66,16 +75,15 @@ export default function AdminPanel({ onBack }) {
         );
         
         if (userLiveProgress) {
-          console.log("✅ यूजर का प्रोग्रेस मिल गया:", userLiveProgress);
+          console.log("✅ यूजर का प्रोग्रेस ऐरे फॉर्मेट में मिल गया:", userLiveProgress);
           setSelectedUserProgress({
             ...userItem,
-            // बैकएंड के प्रोग्रेस स्ट्रक्चर के अनुसार डेटा मैप करें
+            // 🟢 यहाँ सीधे असली ऐरे पास हो रहे हैं, फालतू की 'quizScore: 0' फील्ड पूरी तरह बायपास हो जाएगी
             completedVideos: userLiveProgress.completedVideos || [],
             quizResults: userLiveProgress.quizResults || []
           });
         } else {
-          console.log("⚠️ इस ईमेल/आईडी से कोई प्रोग्रेस मैच नहीं हुई।");
-          // Fallback: अगर मैच नहीं हुआ तो सीधे यूजर ऑब्जेक्ट का डेटा लें
+          console.log("⚠️ इस ईमेल/आईडी से कोई लाइव प्रोग्रेस मैच नहीं हुई। Fallback लागू।");
           setSelectedUserProgress({
             ...userItem,
             completedVideos: userItem.completedVideos || [],
@@ -94,6 +102,7 @@ export default function AdminPanel({ onBack }) {
       setLoadingProgress(false);
     }
   };
+
   const handleActivate = async (e, customEmail) => {
     if (e) e.preventDefault();
     const targetEmail = customEmail || email; 
@@ -126,7 +135,7 @@ export default function AdminPanel({ onBack }) {
   };
 
   // ✅ मुख्य रेंडरिंग लॉजिक (Ternary Operator `? :` ke sath)
- return (
+  return (
     <>
       {selectedUser ? (
         // 🟢 TestListPage Screen (जब किसी यूजर पर क्लिक किया हो)
@@ -143,11 +152,11 @@ export default function AdminPanel({ onBack }) {
               ⏳ यूज़र का प्रोग्रेस डेटा लोड हो रहा है, कृपया प्रतीक्षा करें...
             </div>
           ) : (
-            /* 🚨 ध्यान दें: यहाँ progressData की जगह context वाले modules का स्ट्रक्चर देना जरूरी है */
+            /* 🟢 प्रगति डेटा के रूप में अब हम सही मास्टर कोर्स स्ट्रक्चर भेज रहे हैं */
             <TestListPage 
               user={selectedUserProgress} 
               onBack={() => { setSelectedUser(null); setSelectedUserProgress(null); }} 
-              progressData={progressData} // यहाँ एडमिन पैनल में loadAllUsers से आया हुआ कुल मॉड्यूल्स का डेटा जा रहा है
+              progressData={progressData} 
             />
           )}
         </div>
