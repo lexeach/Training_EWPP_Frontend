@@ -13,23 +13,29 @@ export default function AdminPanel({ onBack }) {
   const [progressData, setProgressData] = useState([]); 
   const [fetchingUsers, setFetchingUsers] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null); 
+  const [selectedUserProgress, setSelectedUserProgress] = useState(null);
+  const [loadingProgress, setLoadingProgress] = useState(false);
 
   const BACKEND_URL = "https://training-ewpp-backend.onrender.com";
 
+  // 1. Sabhi Users aur Modules ka Course Structure load karna
   const loadAllUsers = async (keyToUse) => {
     const key = keyToUse || secretKey;
     if (!key) return;
 
     setFetchingUsers(true);
     try {
-      const response = await axios.post(`${BACKEND_URL}/api/admin`, { secretKey: key });
+      // Users list fetch karein
+      const response = await axios.post(`${BACKEND_URL}/api/admin/users`, { secretKey: key });
+      // Course ke saare modules/videos fetch karein jo TestListPage me dikhane hain
       const progressRes = await axios.get(`${BACKEND_URL}/api/admin/get-user-progress`);
       
       if (response.data.success) setUsers(response.data.users);
-      // यहाँ सुनिश्चित करें कि प्रोग्रेस डेटा सही फॉर्मेट में आ रहा है
-      if (progressRes.data.success) setProgressData(progressRes.data.data); 
+      if (progressRes.data.success) setProgressData(progressRes.data.data);
     } catch (error) {
       console.error("डेटा लोड करने में विफल:", error);
+    } finally {
+      setFetchingUsers(false);
     }
   };
 
@@ -38,6 +44,48 @@ export default function AdminPanel({ onBack }) {
       loadAllUsers(secretKey);
     }
   }, [secretKey]);
+
+  // 2. View Details click karne par Particular User ka Live Progress prapt (fetch) karna
+  const handleViewDetails = async (userItem) => {
+    setSelectedUser(userItem);
+    setLoadingProgress(true);
+    setSelectedUserProgress(null);
+
+    try {
+      // Backend se is specific user ka progress data lekar aana
+      const res = await axios.get(`${BACKEND_URL}/api/admin/get-user-progress`);
+      if (res.data.success && Array.isArray(res.data.data)) {
+        // pure data me se is user ke email ka progress dhoondhein
+        const userLiveProgress = res.data.data.find(p => p.email === userItem.email);
+        
+        if (userLiveProgress) {
+          // Agar database me alag se progress data mil gaya
+          setSelectedUserProgress({
+            ...userItem,
+            completedVideos: userLiveProgress.completedVideos || [],
+            quizResults: userLiveProgress.quizResults || []
+          });
+        } else {
+          // Agar user ne abhi tak koi video nahi dekha ya naya user hai
+          setSelectedUserProgress({
+            ...userItem,
+            completedVideos: userItem.completedVideos || [],
+            quizResults: userItem.quizResults || []
+          });
+        }
+      }
+    } catch (err) {
+      console.error("User progress fetch karne me error:", err);
+      // Error aane par fallback default values ke sath show karein
+      setSelectedUserProgress({
+        ...userItem,
+        completedVideos: userItem.completedVideos || [],
+        quizResults: userItem.quizResults || []
+      });
+    } finally {
+      setLoadingProgress(false);
+    }
+  };
 
   const handleActivate = async (e, customEmail) => {
     if (e) e.preventDefault();
@@ -70,26 +118,33 @@ export default function AdminPanel({ onBack }) {
     }
   };
 
-  // ✅ मुख्य रेंडरिंग लॉजिक
+  // ✅ मुख्य रेंडरिंग लॉजिक (Ternary Operator `? :` ke sath)
   return (
     <>
       {selectedUser ? (
-        // ✅ अगर कोई यूजर सिलेक्टेड है, तो यह हिस्सा रेंडर होगा
+        // 🟢 TestListPage Screen (Jab kisi user par click kiya ho)
         <div style={{ padding: '30px', maxWidth: '1100px', margin: '20px auto' }}>
           <button 
-            onClick={() => setSelectedUser(null)} 
-            style={{ padding: '8px 16px', background: '#475569', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px' }}
+            onClick={() => { setSelectedUser(null); setSelectedUserProgress(null); }} 
+            style={{ padding: '8px 16px', background: '#475569', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold' }}
           >
             ← वापस एडमिन लिस्ट पर
           </button>
-          <TestListPage 
-            user={selectedUser} 
-            onBack={() => setSelectedUser(null)} 
-            progressData={progressData} 
-          />
+          
+          {loadingProgress ? (
+            <div style={{ textAlign: 'center', padding: '40px', fontSize: '18px', color: '#475569' }}>
+              ⏳ यूज़र का प्रोग्रेस डेटा लोड हो रहा है, कृपया प्रतीक्षा करें...
+            </div>
+          ) : (
+            <TestListPage 
+              user={selectedUserProgress} 
+              onBack={() => { setSelectedUser(null); setSelectedUserProgress(null); }} 
+              progressData={progressData} 
+            />
+          )}
         </div>
       ) : (
-        // ✅ वरना, एडमिन डैशबोर्ड रेंडर होगा
+        // 🟢 Main Admin Dashboard Screen
         <div style={{ padding: '30px', maxWidth: '1100px', margin: '20px auto', color: '#1e293b', fontFamily: 'sans-serif' }}>
           <button onClick={onBack} style={{ padding: '8px 16px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold' }}>← वापस जाएँ</button>
 
@@ -105,22 +160,32 @@ export default function AdminPanel({ onBack }) {
 
           <div style={{ background: '#fff', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
             <h3>📋 सभी रजिस्टर्ड पार्टनर्स ({users.length})</h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr style={{ background: '#f1f5f9' }}><th style={{ padding: '12px' }}>Name</th><th>Email</th><th>Status</th><th>Action</th></tr></thead>
-              <tbody>
-                {users.map((item) => (
-                  <tr key={item._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '12px' }}>{item.name}</td>
-                    <td style={{ padding: '12px' }}>{item.email}</td>
-                    <td style={{ padding: '12px' }}>{item.isPaid ? '🟢 Paid' : '🔴 Pending'}</td>
-                    <td style={{ padding: '12px' }}>
-                      <button onClick={() => setSelectedUser(item)} style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', marginRight: '5px' }}>View Details</button>
-                      {!item.isPaid && <button onClick={() => handleActivate(null, item.email)} style={{ background: '#22c55e', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px' }}>⚡ Activate</button>}
-                    </td>
+            {fetchingUsers ? <p>यूज़र्स लोड हो रहे हैं...</p> : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
+                    <th style={{ padding: '12px' }}>Name</th>
+                    <th style={{ padding: '12px' }}>Email</th>
+                    <th style={{ padding: '12px' }}>Status</th>
+                    <th style={{ padding: '12px' }}>Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {users.map((item) => (
+                    <tr key={item._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '12px' }}>{item.name}</td>
+                      <td style={{ padding: '12px' }}>{item.email}</td>
+                      <td style={{ padding: '12px' }}>{item.isPaid ? '🟢 Paid' : '🔴 Pending'}</td>
+                      <td style={{ padding: '12px' }}>
+                        {/* 🟢 handleViewDetails कॉल करेगा जो डेटा प्राप्त करेगा */}
+                        <button onClick={() => handleViewDetails(item)} style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', marginRight: '5px' }}>View Details</button>
+                        {!item.isPaid && <button onClick={() => handleActivate(null, item.email)} style={{ background: '#22c55e', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px' }}>⚡ Activate</button>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
