@@ -1,110 +1,104 @@
-import React, { useContext } from 'react';
-import { ProgressContext } from '../context/ProgressContext';
+import React from 'react';
 
 export default function TestListPage({ user, onBack, progressData }) {
-  const context = useContext(ProgressContext) || {};
-  
-  // 🟢 एडमिन मोड या यूजर मोड के हिसाब से modules तय करें
-  const modules = (progressData && progressData.length > 0) 
-    ? progressData 
-    : (Array.isArray(context.modules) ? context.modules : []);
+  // 🟢 1. यूज़र के टेस्ट और क्विज़ का लाइव डेटा निकालें
+  const quizResults = user?.quizResults || [];
+  const completedVideos = user?.completedVideos || [];
 
-  const currentUser = user || context.user || {};
-  
-  // 🟢 डेटाबेस स्ट्रक्चर फिक्स: अगरcompletedVideos ऐरे नहीं है, तो देखें वीडियो काउंट नंबर में है या नहीं
-  const videoProgressCount = Number(currentUser.videoProgress) || 0;
-  const completedVideosArray = Array.isArray(currentUser.completedVideos) ? currentUser.completedVideos : [];
-  const userResults = Array.isArray(currentUser.quizResults) ? currentUser.quizResults : [];
-  
-  const setCurrentVideo = context.setCurrentVideo || (() => {});
+  // 🟢 2. एडमिन मोड के लिए मास्टर लिस्ट या सीधा फॉलबैक तैयार करना
+  let displayTests = [];
 
-  // 🛡️ वीडियो लिस्ट फ़िल्टरिंग लॉजिक
-  let watchedVideosList = [];
-  try {
-    const allVideos = [];
-    modules.forEach(m => {
-      if (!m) return;
-      if (Array.isArray(m.videos)) allVideos.push(...m.videos);
-      if (Array.isArray(m.subModules)) {
-        m.subModules.forEach(sm => {
-          if (sm && Array.isArray(sm.videos)) allVideos.push(...sm.videos);
+  // अगर हमें प्रॉपर कोर्स स्ट्रक्चर (modules) मिला है (जैसा कि यूजर पैनल में होता है)
+  if (progressData && Array.isArray(progressData) && progressData.length > 0 && progressData[0].modules) {
+    // नॉर्मल यूजर कॉन्टेक्स्ट स्ट्रक्चर पार्सिंग logic
+    progressData.forEach(item => {
+      if (item.modules && Array.isArray(item.modules)) {
+        item.modules.forEach(mod => {
+          if (mod.videos && Array.isArray(mod.videos)) {
+            mod.videos.forEach(vid => {
+              if (completedVideos.includes(vid.id)) {
+                const quizInfo = quizResults.find(q => q.videoId === vid.id);
+                displayTests.push({
+                  id: vid.id,
+                  title: vid.title || vid.name || `टेस्ट (${vid.id})`,
+                  score: quizInfo ? quizInfo.score : '--',
+                  passed: quizInfo ? quizInfo.passed : false
+                });
+              }
+            });
+          }
         });
       }
     });
+  } 
+  // 🚨 एडमिन पैनल फॉलबैक: अगर कोर्स स्ट्रक्चर लोड नहीं हुआ, तो सीधे quizResults ऐरे को रेंडर करें!
+  else if (quizResults.length > 0) {
+    displayTests = quizResults.map(q => {
+      // वीडियो आईडी के आधार पर एक सुंदर डिफॉल्ट नाम असाइन करें
+      let customTitle = q.videoId;
+      if (q.videoId === "m1s1-v1") customTitle = "[m1s1-v1] Exowa क्या है?";
+      else if (q.videoId === "m1s1-v2") customTitle = "[m1s1-v2] Program का उद्देश्य";
+      else if (q.videoId === "m1s1-v3") customTitle = "[m1s1-v3] Women empowerment vision";
+      else if (q.videoId === "m1s1-v4") customTitle = "[m1s1-v4] आपको क्या करना है ?";
+      else if (q.videoId === "m2s1-v1") customTitle = "[m1s2-v1] Work from home";
+      else if (q.videoId === "m2s1-v2") customTitle = "[m1s2-v2] सम्मान + income";
+      else if (q.videoId === "m2s1-v3") customTitle = "[m1s2-v3] Strategic Mindset for EWPP Partners";
+      else if (q.videoId === "m2s1-v4") customTitle = "[m1s2-v4] Housewives भी क्यों सफल हो सकती हैं";
 
-    // 🟢 यहाँ नंबर के आधार पर या ऐरे के आधार पर (दोनों तरीकों से) फ़िल्टर करें
-    if (videoProgressCount > 0) {
-      // अगर बैकएंड से सिर्फ नंबर (जैसे 8) आया है, तो पहले 8 वीडियो को वॉचलिस्ट में शामिल करें
-      watchedVideosList = allVideos.slice(0, videoProgressCount);
-    } else {
-      // बैकअप: अगर कभी ऐरे फॉर्मेट में डेटा आए
-      watchedVideosList = allVideos.filter(v => {
-        if (!v || !v.videoId) return false;
-        return completedVideosArray.some(cv => String(cv).trim() === String(v.videoId).trim());
-      });
-    }
-  } catch (err) {
-    console.error("❌ फ़िल्टरिंग में एरर:", err);
+      return {
+        id: q.videoId,
+        title: customTitle,
+        score: q.score !== undefined ? q.score : '--',
+        passed: q.passed !== undefined ? q.passed : true
+      };
+    });
   }
 
-  const handleStartTest = (video) => {
-    if (user) {
-        alert("एडमिन मोड में आप टेस्ट नहीं दे सकते।");
-        return;
-    }
-    if (video && typeof setCurrentVideo === 'function') {
-      localStorage.setItem('autoStartQuiz', 'true'); 
-      setCurrentVideo(video);
-      if (typeof onBack === 'function') onBack();
-    }
-  };
-
   return (
-    <div style={{ padding: '15px', maxWidth: '1000px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '20px' }}>📝 ऑनलाइन टेस्ट लिस्ट ({watchedVideosList.length})</h2>
-        <button onClick={onBack} style={{ padding: '10px 16px', borderRadius: '6px', cursor: 'pointer', background: '#475569', color: '#fff', border: 'none' }}>◀ वापस</button>
+    <div style={{ background: '#fff', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', fontFamily: 'sans-serif' }}>
+      <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px' }}>
+        <h2 style={{ margin: 0, color: '#1e293b' }}>📝 ऑनलाइन टेस्ट लिस्ट ({displayTests.length})</h2>
+        <button 
+          onClick={onBack} 
+          style={{ padding: '6px 12px', background: '#e2e8f0', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          ◀ वापस
+        </button>
       </div>
 
-      {watchedVideosList.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-          <p>अभी यहाँ कोई test उपलब्ध नहीं है।</p>
-        </div>
+      {displayTests.length === 0 ? (
+        <p style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>अभी यहाँ कोई test उपलब्ध नहीं है।</p>
       ) : (
-        <div style={{ overflowX: 'auto', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#1e293b', color: '#fff' }}>
-                <th style={{ padding: '14px', textAlign: 'left' }}>वीडियो नाम</th>
-                <th style={{ padding: '14px' }}>प्राप्त अंक</th>
-                <th style={{ padding: '14px' }}>स्थिति</th>
-                <th style={{ padding: '14px' }}>एक्शन</th>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px' }}>
+          <thead>
+            <tr style={{ background: '#0f172a', color: '#fff', textAlign: 'left' }}>
+              <th style={{ padding: '12px', borderRadius: '4px 0 0 4px' }}>वीडियो नाम</th>
+              <th style={{ padding: '12px' }}>प्राप्त अंक</th>
+              <th style={{ padding: '12px' }}>स्थिति</th>
+              <th style={{ padding: '12px', borderRadius: '0 4px 4px 0' }}>एक्शन</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayTests.map((test, index) => (
+              <tr key={test.id || index} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: index % 2 === 0 ? '#f8fafc' : '#fff' }}>
+                <td style={{ padding: '14px 12px', fontWeight: '500', color: '#334155' }}>{test.title}</td>
+                <td style={{ padding: '14px 12px', fontWeight: 'bold', color: '#0284c7', textAlign: 'center' }}>{test.score}</td>
+                <td style={{ padding: '14px 12px' }}>
+                  {test.passed ? (
+                    <span style={{ color: '#16a34a', fontWeight: 'bold' }}>PASSED ✅</span>
+                  ) : (
+                    <span style={{ color: '#dc2626', fontWeight: 'bold' }}>FAILED ❌</span>
+                  )}
+                </td>
+                <td style={{ padding: '14px 12px' }}>
+                  <button style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'not-allowed', color: '#94a3b8', fontSize: '12px' }} disabled>
+                    Retest 🔄
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {watchedVideosList.map((video, index) => {
-                const testResult = userResults.find(r => 
-                    r && String(r.videoId).trim() === String(video.videoId).trim()
-                );
-
-                return (
-                  <tr key={video.videoId || index} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '14px' }}>[{video.videoId || index + 1}] {video.title}</td>
-                    <td style={{ padding: '14px', textAlign: 'center' }}>{testResult ? testResult.score : '—'}</td>
-                    <td style={{ padding: '14px', textAlign: 'center' }}>
-                      {testResult ? 'PASSED ✅' : 'PENDING ⏳'}
-                    </td>
-                    <td style={{ padding: '14px', textAlign: 'center' }}>
-                      <button onClick={() => handleStartTest(video)} style={{ cursor: 'pointer', padding: '6px 12px', borderRadius: '4px' }}>
-                        {testResult ? 'Retest 🔄' : 'Give Test 📝'}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );
