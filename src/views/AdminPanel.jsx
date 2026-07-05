@@ -75,9 +75,12 @@ export default function AdminPanel({ onBack }) {
   return (
     <>
       {selectedUser ? (
-        // अगर यूज़र सिलेक्टेड है, तो टेस्ट लिस्ट दिखाएं
+        // ✅ अगर कोई यूजर सिलेक्टेड है, तो यह हिस्सा रेंडर होगा
         <div style={{ padding: '30px', maxWidth: '1100px', margin: '20px auto' }}>
-          <button onClick={() => setSelectedUser(null)} style={{ padding: '8px 16px', background: '#475569', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px' }}>
+          <button 
+            onClick={() => setSelectedUser(null)} 
+            style={{ padding: '8px 16px', background: '#475569', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px' }}
+          >
             ← वापस एडमिन लिस्ट पर
           </button>
           <TestListPage 
@@ -87,7 +90,7 @@ export default function AdminPanel({ onBack }) {
           />
         </div>
       ) : (
-        // वरना एडमिन डैशबोर्ड दिखाएं
+        // ✅ वरना, एडमिन डैशबोर्ड रेंडर होगा
         <div style={{ padding: '30px', maxWidth: '1100px', margin: '20px auto', color: '#1e293b', fontFamily: 'sans-serif' }}>
           <button onClick={onBack} style={{ padding: '8px 16px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold' }}>← वापस जाएँ</button>
 
