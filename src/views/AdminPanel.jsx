@@ -126,10 +126,10 @@ export default function AdminPanel({ onBack }) {
   };
 
   // ✅ मुख्य रेंडरिंग लॉजिक (Ternary Operator `? :` ke sath)
-  return (
+ return (
     <>
       {selectedUser ? (
-        // 🟢 TestListPage Screen (Jab kisi user par click kiya ho)
+        // 🟢 TestListPage Screen (जब किसी यूजर पर क्लिक किया हो)
         <div style={{ padding: '30px', maxWidth: '1100px', margin: '20px auto' }}>
           <button 
             onClick={() => { setSelectedUser(null); setSelectedUserProgress(null); }} 
@@ -143,10 +143,11 @@ export default function AdminPanel({ onBack }) {
               ⏳ यूज़र का प्रोग्रेस डेटा लोड हो रहा है, कृपया प्रतीक्षा करें...
             </div>
           ) : (
+            /* 🚨 ध्यान दें: यहाँ progressData की जगह context वाले modules का स्ट्रक्चर देना जरूरी है */
             <TestListPage 
               user={selectedUserProgress} 
               onBack={() => { setSelectedUser(null); setSelectedUserProgress(null); }} 
-              progressData={progressData} 
+              progressData={progressData} // यहाँ एडमिन पैनल में loadAllUsers से आया हुआ कुल मॉड्यूल्स का डेटा जा रहा है
             />
           )}
         </div>
@@ -184,7 +185,6 @@ export default function AdminPanel({ onBack }) {
                       <td style={{ padding: '12px' }}>{item.email}</td>
                       <td style={{ padding: '12px' }}>{item.isPaid ? '🟢 Paid' : '🔴 Pending'}</td>
                       <td style={{ padding: '12px' }}>
-                        {/* 🟢 handleViewDetails कॉल करेगा जो डेटा प्राप्त करेगा */}
                         <button onClick={() => handleViewDetails(item)} style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', marginRight: '5px' }}>View Details</button>
                         {!item.isPaid && <button onClick={() => handleActivate(null, item.email)} style={{ background: '#22c55e', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px' }}>⚡ Activate</button>}
                       </td>
