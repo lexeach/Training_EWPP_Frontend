@@ -1,46 +1,84 @@
-import React from 'react';
+import React, { useContext } from 'react';
+import { ProgressContext } from '../context/ProgressContext';
 
-export default function TestListPage({ user, onBack, progressData, onRetest }) {
-  // 🟢 यूज़र के टेस्ट और क्विज़ का लाइव डेटा निकालें
-  const quizResults = user?.quizResults || [];
-  const completedVideos = user?.completedVideos || [];
+export default function TestListPage({ user, onBack, progressData }) {
+  // 🔒 कांटेक्स्ट से यूजर का प्रोग्रेस डेटा और कंट्रोल्स निकालें (यूजर मोड के लिए)
+  const context = useContext(ProgressContext) || {};
+  const contextCompletedVideos = Array.isArray(context.completedVideos) ? context.completedVideos : [];
+  const contextModules = Array.isArray(context.modules) ? context.modules : [];
+  const setCurrentVideo = context.setCurrentVideo || (() => {});
 
-  // 🛡️ 100% सटीक चेक: अगर URL में '/admin' है तो ही एडमिन माना जाएगा
+  // 🛡️ सटीक चेक: अगर URL में '/admin' है तो ही एडमिन माना जाएगा
   const isAdmin = window.location.pathname.includes('/admin');
 
-  let displayTests = [];
+  // 🟢 यूज़र के टेस्ट और क्विज़ का लाइव डेटा निकालें (चाहे पैरेंट से आए या कांटेक्स्ट से)
+  const quizResults = user?.quizResults || context?.quizResults || [];
+  const completedVideos = isAdmin ? (user?.completedVideos || []) : contextCompletedVideos;
 
-  // 1. अगर हमें प्रॉपर कोर्स स्ट्रक्चर (modules) मिला है (यूजर पैनल का नॉर्मल फ्लो)
-  if (progressData && Array.isArray(progressData) && progressData.length > 0 && progressData[0].modules) {
-    progressData.forEach(item => {
-      if (item.modules && Array.isArray(item.modules)) {
-        item.modules.forEach(mod => {
-          if (mod.videos && Array.isArray(mod.videos)) {
-            mod.videos.forEach(vid => {
-              if (completedVideos.includes(vid.id)) {
-                const quizInfo = quizResults.find(q => q.videoId === vid.id);
-                displayTests.push({
-                  id: vid.id,
-                  title: vid.title || vid.name || `टेस्ट (${vid.id})`,
-                  score: quizInfo ? quizInfo.score : '--',
-                  passed: quizInfo ? quizInfo.passed : false
-                });
-              }
-            });
-          }
-        });
+  let displayTests = [];
+  let masterVideosMap = {};
+
+  // 1. कोर्स के सभी मॉड्यूल्स से वीडियो लिस्ट को फ्लैट मैप में इकट्ठा करना (ताकि वीडियो ऑब्जेक्ट ढूंढा जा सके)
+  const targetModules = (progressData && Array.isArray(progressData) && progressData.length > 0 && progressData[0].modules) 
+    ? progressData[0].modules 
+    : contextModules;
+
+  try {
+    if (Array.isArray(targetModules)) {
+      targetModules.forEach(m => {
+        if (!m) return;
+        if (Array.isArray(m.videos)) {
+          m.videos.forEach(v => { if (v && v.videoId) masterVideosMap[v.videoId] = v; if (v && v.id) masterVideosMap[v.id] = v; });
+        }
+        if (Array.isArray(m.subModules)) {
+          m.subModules.forEach(sm => {
+            if (sm && Array.isArray(sm.videos)) {
+              sm.videos.forEach(v => { if (v && v.videoId) masterVideosMap[v.videoId] = v; if (v && v.id) masterVideosMap[v.id] = v; });
+            }
+          });
+        }
+      });
+    }
+  } catch (err) {
+    console.error("❌ मॉड्यूल्स पार्स करने में एरर:", err);
+  }
+
+  // 2. डिस्प्ले लिस्ट तैयार करना
+  if (completedVideos.length > 0) {
+    // केवल वही वीडियोस लें जो कंप्लीट हो चुके हैं
+    completedVideos.forEach(vidId => {
+      const videoObj = masterVideosMap[vidId];
+      const quizInfo = quizResults.find(q => q && String(q.videoId).trim() === String(vidId).trim());
+
+      // वीडियो नाम का निर्धारण (अगर मास्टर लिस्ट से नहीं मिला तो डिफॉल्ट हार्डकोडेड नाम)
+      let customTitle = videoObj?.title || videoObj?.name || vidId;
+      if (!videoObj) {
+        if (vidId === "m1s1-v1") customTitle = "[m1s1-v1] Exowa क्या है?";
+        else if (vidId === "m1s1-v2") customTitle = "[m1s1-v2] Program का उद्देश्य";
+        else if (vidId === "m1s1-v3") customTitle = "[m1s1-v3] Women empowerment vision";
+        else if (vidId === "m1s1-v4") customTitle = "[m1s1-v4] आपको क्या करना है ?";
+        else if (vidId === "m1s2-v1" || vidId === "m2s1-v1") customTitle = "[m1s2-v1] Work from home";
+        else if (vidId === "m1s2-v2" || vidId === "m2s1-v2") customTitle = "[m1s2-v2] सम्मान + income";
+        else if (vidId === "m1s2-v3" || vidId === "m2s1-v3") customTitle = "[m1s2-v3] Strategic Mindset for EWPP Partners";
+        else if (vidId === "m1s2-v4" || vidId === "m2s1-v4") customTitle = "[m1s2-v4] Housewives भी क्यों सफल हो सकती हैं";
       }
+
+      displayTests.push({
+        id: vidId,
+        title: customTitle,
+        score: quizInfo ? (quizInfo.score !== undefined ? quizInfo.score : '--') : '—',
+        passed: quizInfo ? (quizInfo.passed === true || quizInfo.passed === 'true') : false,
+        rawVideo: videoObj || { videoId: vidId, id: vidId, title: customTitle }
+      });
     });
-  } 
-  // 🚨 2. एडमिन पैनल या सीधा फॉलबैक
-  else if (quizResults.length > 0) {
+  } else if (quizResults.length > 0 && isAdmin) {
+    // फॉलबैक एडमिन के लिए अगर कंप्लीट वीडियो ऐरे खाली मिले
     displayTests = quizResults.map(q => {
       let customTitle = q.videoId;
       if (q.videoId === "m1s1-v1") customTitle = "[m1s1-v1] Exowa क्या है?";
       else if (q.videoId === "m1s1-v2") customTitle = "[m1s1-v2] Program का उद्देश्य";
       else if (q.videoId === "m1s1-v3") customTitle = "[m1s1-v3] Women empowerment vision";
       else if (q.videoId === "m1s1-v4") customTitle = "[m1s1-v4] आपको क्या करना है ?";
-      
       else if (q.videoId === "m1s2-v1" || q.videoId === "m2s1-v1") customTitle = "[m1s2-v1] Work from home";
       else if (q.videoId === "m1s2-v2" || q.videoId === "m2s1-v2") customTitle = "[m1s2-v2] सम्मान + income";
       else if (q.videoId === "m1s2-v3" || q.videoId === "m2s1-v3") customTitle = "[m1s2-v3] Strategic Mindset for EWPP Partners";
@@ -50,80 +88,129 @@ export default function TestListPage({ user, onBack, progressData, onRetest }) {
         id: q.videoId,
         title: customTitle,
         score: q.score !== undefined ? q.score : '--',
-        passed: q.passed !== undefined ? q.passed : true
+        passed: q.passed === true || q.passed === 'true',
+        rawVideo: { videoId: q.videoId, id: q.videoId, title: customTitle }
       };
     });
   }
 
-  // रीटेस्ट क्लिक हैंडलर
-  const handleRetestClick = (videoId) => {
-    if (onRetest) {
-      onRetest(videoId);
-    } else {
-      // अगर पैरेंट में फंक्शन नहीं भी बना, तो यूजर को अलर्ट दिखेगा ताकि क्रैश न हो
-      alert(`वीडियो आईडी ${videoId} के लिए टेस्ट दोबारा शुरू हो रहा है...`);
+  // 🟢 यूजर के लिए सीधा ओरिजिनल टेस्ट विंडो ट्रिगर करने वाला फंक्शन
+  const handleStartTest = (videoObj) => {
+    if (videoObj && typeof setCurrentVideo === 'function') {
+      // 💡 वीडियो प्लेयर को सिग्नल देने के लिए लोकलस्टोरेज में फ्लैग सेट करें
+      localStorage.setItem('autoStartQuiz', 'true'); 
+      
+      setCurrentVideo(videoObj);
+      if (typeof onBack === 'function') onBack();
     }
   };
 
   return (
-    <div style={{ background: '#fff', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px' }}>
-        <h2 style={{ margin: 0, color: '#1e293b' }}>📝 ऑनलाइन टेस्ट लिस्ट ({displayTests.length})</h2>
+    <div style={{ padding: '15px', maxWidth: '1000px', margin: '0 auto', boxSizing: 'border-box', fontFamily: 'sans-serif' }}>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '10px', flexWrap: 'wrap' }}>
+        <h2 style={{ margin: 0, color: '#1e293b', fontSize: '20px', fontWeight: '700' }}>
+          📝 {isAdmin ? 'पार्टनर ऑनलाइन टेस्ट लिस्ट' : 'आपकी ऑनलाइन टेस्ट लिस्ट'} ({displayTests.length})
+        </h2>
         <button 
-          onClick={onBack} 
-          style={{ padding: '6px 12px', background: '#e2e8f0', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+          onClick={onBack}
+          style={{ backgroundColor: '#475569', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}
         >
-          ◀ वापस
+          {isAdmin ? '◀ वापस एडमिन लिस्ट पर' : '◀ वापस कोर्स पर जाएँ'}
         </button>
       </div>
 
       {displayTests.length === 0 ? (
-        <p style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>अभी यहाँ कोई test उपलब्ध नहीं है।</p>
+        <div style={{ textAlign: 'center', padding: '40px', color: '#64748b', backgroundColor: '#ffffff', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+          <p style={{ fontSize: '16px', fontWeight: '500', margin: '0 0 5px 0' }}>अभी यहाँ कोई test उपलब्ध नहीं है।</p>
+          <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>टेस्ट देने के लिए पहले कोर्स का कोई भी वीडियो पूरा देखें।</p>
+        </div>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px' }}>
-          <thead>
-            <tr style={{ background: '#0f172a', color: '#fff', textAlign: 'left' }}>
-              <th style={{ padding: '12px', borderRadius: '4px 0 0 4px' }}>वीडियो नाम</th>
-              <th style={{ padding: '12px', textAlign: 'center' }}>प्राप्त अंक</th>
-              <th style={{ padding: '12px' }}>स्थिति</th>
-              <th style={{ padding: '12px', borderRadius: '0 4px 4px 0' }}>एक्शन</th>
-            </tr>
-          </thead>
-          <tbody>
-            {displayTests.map((test, index) => (
-              <tr key={test.id || index} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: index % 2 === 0 ? '#f8fafc' : '#fff' }}>
-                <td style={{ padding: '14px 12px', fontWeight: '500', color: '#334155' }}>{test.title}</td>
-                <td style={{ padding: '14px 12px', fontWeight: 'bold', color: '#0284c7', textAlign: 'center' }}>{test.score}</td>
-                <td style={{ padding: '14px 12px' }}>
-                  {test.passed ? (
-                    <span style={{ color: '#16a34a', fontWeight: 'bold' }}>PASSED ✅</span>
-                  ) : (
-                    <span style={{ color: '#dc2626', fontWeight: 'bold' }}>FAILED ❌</span>
-                  )}
-                </td>
-                <td style={{ padding: '14px 12px' }}>
-                  {isAdmin ? (
-                    /* 🔒 एडमिन पैनल में धुंधला (Locked) बटन */
-                    <button 
-                      style={{ padding: '6px 12px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'not-allowed', color: '#94a3b8', fontSize: '13px' }} 
-                      disabled
-                    >
-                      Retest 🔄
-                    </button>
-                  ) : (
-                    /* 🔓 यूजर पैनल पर चमकदार, नीला और चालू (Active) बटन */
-                    <button 
-                      onClick={() => handleRetestClick(test.id)}
-                      style={{ padding: '6px 12px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '500', boxShadow: '0 2px 4px rgba(2, 132, 199, 0.2)' }}
-                    >
-                      Retest 🔄
-                    </button>
-                  )}
-                </td>
+        <div style={{ 
+          width: '100%', 
+          overflowX: 'auto', 
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#64748b #f1f5f9',
+          backgroundColor: '#fff', 
+          borderRadius: '8px', 
+          border: '1px solid #e2e8f0', 
+          boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+          paddingBottom: '5px' 
+        }}>
+          <style>
+            {`
+              div::-webkit-scrollbar { height: 8px; }
+              div::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+              div::-webkit-scrollbar-thumb { background: #64748b; border-radius: 4px; border: 2px solid #f1f5f9; }
+              div::-webkit-scrollbar-thumb:hover { background: #475569; }
+            `}
+          </style>
+          
+          <table style={{ 
+            width: '100%', 
+            borderCollapse: 'collapse', 
+            textAlign: 'left',
+            minWidth: '600px'
+          }}>
+            <thead>
+              <tr style={{ backgroundColor: '#1e293b', color: '#fff' }}>
+                <th style={{ padding: '14px' }}>वीडियो नाम</th>
+                <th style={{ padding: '14px', textAlign: 'center' }}>प्राप्त अंक</th>
+                <th style={{ padding: '14px', textAlign: 'center' }}>स्थिति</th>
+                <th style={{ padding: '14px', textAlign: 'center' }}>एक्शन</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {displayTests.map((test, index) => (
+                <tr key={test.id || index} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: index % 2 === 0 ? '#f8fafc' : '#fff' }}>
+                  <td style={{ padding: '14px', fontWeight: '500', color: '#334155', maxWidth: '320px', wordBreak: 'break-word' }}>
+                    {test.title}
+                  </td>
+                  <td style={{ padding: '14px', fontWeight: 'bold', color: test.score !== '—' && test.score !== '--' ? 'green' : '#94a3b8', textAlign: 'center' }}>
+                    {test.score}
+                  </td>
+                  <td style={{ padding: '14px', textAlign: 'center' }}>
+                    {test.passed ? (
+                      <span style={{ color: 'green', backgroundColor: '#dcfce7', padding: '4px 8px', borderRadius: '4px', fontWeight: '600', fontSize: '12px' }}>PASSED ✅</span>
+                    ) : (
+                      <span style={{ color: '#b45309', backgroundColor: '#fef3c7', padding: '4px 8px', borderRadius: '4px', fontWeight: '600', fontSize: '12px' }}>PENDING ⏳</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '14px', textAlign: 'center' }}>
+                    {isAdmin ? (
+                      /* 🔒 एडमिन के लिए लॉक बटन (पॉप-अप नहीं आएगा) */
+                      <button 
+                        style={{ padding: '8px 14px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'not-allowed', color: '#94a3b8', fontSize: '13px', fontWeight: 'bold' }} 
+                        disabled
+                      >
+                        Retest 🔄
+                      </button>
+                    ) : (
+                      /* 🔓 यूजर के लिए सीधे वीडियो/क्विज विंडो खोलने वाला एक्टिव बटन */
+                      <button 
+                        onClick={() => handleStartTest(test.rawVideo)}
+                        style={{ 
+                          backgroundColor: '#0284c7', 
+                          color: '#fff', 
+                          border: 'none', 
+                          padding: '8px 14px', 
+                          borderRadius: '4px', 
+                          cursor: 'pointer', 
+                          fontWeight: 'bold',
+                          fontSize: '13px',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                        }}
+                      >
+                        Retest 🔄
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
