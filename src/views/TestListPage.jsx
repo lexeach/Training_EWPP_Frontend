@@ -1,16 +1,18 @@
 import React from 'react';
 
-export default function TestListPage({ user, onBack, progressData }) {
-  // 🟢 1. यूज़र के टेस्ट और क्विज़ का लाइव डेटा निकालें
+export default function TestListPage({ user, onBack, progressData, onRetest }) {
+  // 🟢 यूज़र के टेस्ट और क्विज़ का लाइव डेटा निकालें
   const quizResults = user?.quizResults || [];
   const completedVideos = user?.completedVideos || [];
 
-  // 🟢 2. एडमिन मोड के लिए मास्टर लिस्ट या सीधा फॉलबैक तैयार करना
+  // 🛡️ पता करें कि यह एडमिन पैनल से खुला है या यूजर पैनल से
+  // अगर प्रोग्रेस डेटा एडमिन वाला है या कंपोनेंट को किसी एडमिन पैरेंट से रेंडर किया जा रहा है
+  const isAdmin = window.location.pathname.includes('/admin') || !onRetest;
+
   let displayTests = [];
 
-  // अगर हमें प्रॉपर कोर्स स्ट्रक्चर (modules) मिला है (जैसा कि यूजर पैनल में होता है)
+  // 1. अगर हमें प्रॉपर कोर्स स्ट्रक्चर (modules) मिला है (यूजर पैनल का नॉर्मल फ्लो)
   if (progressData && Array.isArray(progressData) && progressData.length > 0 && progressData[0].modules) {
-    // नॉर्मल यूजर कॉन्टेक्स्ट स्ट्रक्चर पार्सिंग logic
     progressData.forEach(item => {
       if (item.modules && Array.isArray(item.modules)) {
         item.modules.forEach(mod => {
@@ -31,19 +33,21 @@ export default function TestListPage({ user, onBack, progressData }) {
       }
     });
   } 
-  // 🚨 एडमिन पैनल फॉलबैक: अगर कोर्स स्ट्रक्चर लोड नहीं हुआ, तो सीधे quizResults ऐरे को रेंडर करें!
+  // 🚨 2. एडमिन पैनल या सीधा फॉलबैक: अगर कोर्स स्ट्रक्चर ऑब्जेक्ट नहीं है, तो quizResults से डेटा बनाएं
   else if (quizResults.length > 0) {
     displayTests = quizResults.map(q => {
-      // वीडियो आईडी के आधार पर एक सुंदर डिफॉल्ट नाम असाइन करें
+      // 🟢 फिक्स: यहाँ डेटाबेस की सटीक आईडी 'm1s2' के सभी नाम मैच कर दिए गए हैं
       let customTitle = q.videoId;
       if (q.videoId === "m1s1-v1") customTitle = "[m1s1-v1] Exowa क्या है?";
       else if (q.videoId === "m1s1-v2") customTitle = "[m1s1-v2] Program का उद्देश्य";
       else if (q.videoId === "m1s1-v3") customTitle = "[m1s1-v3] Women empowerment vision";
       else if (q.videoId === "m1s1-v4") customTitle = "[m1s1-v4] आपको क्या करना है ?";
-      else if (q.videoId === "m2s1-v1") customTitle = "[m1s2-v1] Work from home";
-      else if (q.videoId === "m2s1-v2") customTitle = "[m1s2-v2] सम्मान + income";
-      else if (q.videoId === "m2s1-v3") customTitle = "[m1s2-v3] Strategic Mindset for EWPP Partners";
-      else if (q.videoId === "m2s1-v4") customTitle = "[m1s2-v4] Housewives भी क्यों सफल हो सकती हैं";
+      
+      // नीचे वाले 4 वीडियो के नाम का परफेक्ट मिलान
+      else if (q.videoId === "m1s2-v1" || q.videoId === "m2s1-v1") customTitle = "[m1s2-v1] Work from home";
+      else if (q.videoId === "m1s2-v2" || q.videoId === "m2s1-v2") customTitle = "[m1s2-v2] सम्मान + income";
+      else if (q.videoId === "m1s2-v3" || q.videoId === "m2s1-v3") customTitle = "[m1s2-v3] Strategic Mindset for EWPP Partners";
+      else if (q.videoId === "m1s2-v4" || q.videoId === "m2s1-v4") customTitle = "[m1s2-v4] Housewives भी क्यों सफल हो सकती हैं";
 
       return {
         id: q.videoId,
@@ -54,9 +58,18 @@ export default function TestListPage({ user, onBack, progressData }) {
     });
   }
 
+  // रीटेस्ट ट्रिगर करने का फंक्शन (यूजर पैनल के लिए)
+  const handleRetestClick = (videoId) => {
+    if (onRetest) {
+      onRetest(videoId);
+    } else {
+      alert("रीटेस्ट प्रक्रिया शुरू की जा रही है...");
+    }
+  };
+
   return (
     <div style={{ background: '#fff', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px' }}>
         <h2 style={{ margin: 0, color: '#1e293b' }}>📝 ऑनलाइन टेस्ट लिस्ट ({displayTests.length})</h2>
         <button 
           onClick={onBack} 
@@ -73,7 +86,7 @@ export default function TestListPage({ user, onBack, progressData }) {
           <thead>
             <tr style={{ background: '#0f172a', color: '#fff', textAlign: 'left' }}>
               <th style={{ padding: '12px', borderRadius: '4px 0 0 4px' }}>वीडियो नाम</th>
-              <th style={{ padding: '12px' }}>प्राप्त अंक</th>
+              <th style={{ padding: '12px', textAlign: 'center' }}>प्राप्त अंक</th>
               <th style={{ padding: '12px' }}>स्थिति</th>
               <th style={{ padding: '12px', borderRadius: '0 4px 4px 0' }}>एक्शन</th>
             </tr>
@@ -91,9 +104,24 @@ export default function TestListPage({ user, onBack, progressData }) {
                   )}
                 </td>
                 <td style={{ padding: '14px 12px' }}>
-                  <button style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'not-allowed', color: '#94a3b8', fontSize: '12px' }} disabled>
-                    Retest 🔄
-                  </button>
+                  {isAdmin ? (
+                    /* 🔒 एडमिन के लिए लॉक बटन */
+                    <button 
+                      style={{ padding: '6px 12px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'not-allowed', color: '#94a3b8', fontSize: '13px' }} 
+                      disabled
+                      title="एडमिन रीटेस्ट नहीं दे सकता"
+                    >
+                      Retest 🔄
+                    </button>
+                  ) : (
+                    /* 🔓 असली यूजर के लिए फुली एक्टिवेटेड बटन */
+                    <button 
+                      onClick={() => handleRetestClick(test.id)}
+                      style={{ padding: '6px 12px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '500', boxShadow: '0 2px 4px rgba(2, 132, 199, 0.2)' }}
+                    >
+                      Retest 🔄
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
