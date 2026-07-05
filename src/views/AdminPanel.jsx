@@ -74,19 +74,19 @@ export default function AdminPanel({ onBack }) {
   // ✅ मुख्य रेंडरिंग लॉजिक
   return (
     <>
-     {selectedUser && (
-  <div style={{ padding: '30px', maxWidth: '1100px', margin: '20px auto' }}>
-    <button onClick={() => setSelectedUser(null)}>← वापस</button>
-    
-    {/* 🟢 'user' और 'progressData' प्रॉप्स पास करें */}
-    <TestListPage 
-      user={selectedUser} 
-      onBack={() => setSelectedUser(null)} 
-      // सुनिश्चित करें कि progressData में वह डेटा है जो आपने backend से fetched किया है
-      progressData={progressData} 
-    />
-  </div>
-)}
+      {selectedUser ? (
+        // अगर यूज़र सिलेक्टेड है, तो टेस्ट लिस्ट दिखाएं
+        <div style={{ padding: '30px', maxWidth: '1100px', margin: '20px auto' }}>
+          <button onClick={() => setSelectedUser(null)} style={{ padding: '8px 16px', background: '#475569', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px' }}>
+            ← वापस एडमिन लिस्ट पर
+          </button>
+          <TestListPage 
+            user={selectedUser} 
+            onBack={() => setSelectedUser(null)} 
+            progressData={progressData} 
+          />
+        </div>
+      ) : (
         // वरना एडमिन डैशबोर्ड दिखाएं
         <div style={{ padding: '30px', maxWidth: '1100px', margin: '20px auto', color: '#1e293b', fontFamily: 'sans-serif' }}>
           <button onClick={onBack} style={{ padding: '8px 16px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold' }}>← वापस जाएँ</button>
