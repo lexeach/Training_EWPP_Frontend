@@ -5,9 +5,8 @@ export default function TestListPage({ user, onBack, progressData, onRetest }) {
   const quizResults = user?.quizResults || [];
   const completedVideos = user?.completedVideos || [];
 
-  // 🛡️ पता करें कि यह एडमिन पैनल से खुला है या यूजर पैनल से
-  // अगर प्रोग्रेस डेटा एडमिन वाला है या कंपोनेंट को किसी एडमिन पैरेंट से रेंडर किया जा रहा है
-  const isAdmin = window.location.pathname.includes('/admin') || !onRetest;
+  // 🛡️ 100% सटीक चेक: अगर URL में '/admin' है तो ही एडमिन माना जाएगा
+  const isAdmin = window.location.pathname.includes('/admin');
 
   let displayTests = [];
 
@@ -33,17 +32,15 @@ export default function TestListPage({ user, onBack, progressData, onRetest }) {
       }
     });
   } 
-  // 🚨 2. एडमिन पैनल या सीधा फॉलबैक: अगर कोर्स स्ट्रक्चर ऑब्जेक्ट नहीं है, तो quizResults से डेटा बनाएं
+  // 🚨 2. एडमिन पैनल या सीधा फॉलबैक
   else if (quizResults.length > 0) {
     displayTests = quizResults.map(q => {
-      // 🟢 फिक्स: यहाँ डेटाबेस की सटीक आईडी 'm1s2' के सभी नाम मैच कर दिए गए हैं
       let customTitle = q.videoId;
       if (q.videoId === "m1s1-v1") customTitle = "[m1s1-v1] Exowa क्या है?";
       else if (q.videoId === "m1s1-v2") customTitle = "[m1s1-v2] Program का उद्देश्य";
       else if (q.videoId === "m1s1-v3") customTitle = "[m1s1-v3] Women empowerment vision";
       else if (q.videoId === "m1s1-v4") customTitle = "[m1s1-v4] आपको क्या करना है ?";
       
-      // नीचे वाले 4 वीडियो के नाम का परफेक्ट मिलान
       else if (q.videoId === "m1s2-v1" || q.videoId === "m2s1-v1") customTitle = "[m1s2-v1] Work from home";
       else if (q.videoId === "m1s2-v2" || q.videoId === "m2s1-v2") customTitle = "[m1s2-v2] सम्मान + income";
       else if (q.videoId === "m1s2-v3" || q.videoId === "m2s1-v3") customTitle = "[m1s2-v3] Strategic Mindset for EWPP Partners";
@@ -58,12 +55,13 @@ export default function TestListPage({ user, onBack, progressData, onRetest }) {
     });
   }
 
-  // रीटेस्ट ट्रिगर करने का फंक्शन (यूजर पैनल के लिए)
+  // रीटेस्ट क्लिक हैंडलर
   const handleRetestClick = (videoId) => {
     if (onRetest) {
       onRetest(videoId);
     } else {
-      alert("रीटेस्ट प्रक्रिया शुरू की जा रही है...");
+      // अगर पैरेंट में फंक्शन नहीं भी बना, तो यूजर को अलर्ट दिखेगा ताकि क्रैश न हो
+      alert(`वीडियो आईडी ${videoId} के लिए टेस्ट दोबारा शुरू हो रहा है...`);
     }
   };
 
@@ -105,16 +103,15 @@ export default function TestListPage({ user, onBack, progressData, onRetest }) {
                 </td>
                 <td style={{ padding: '14px 12px' }}>
                   {isAdmin ? (
-                    /* 🔒 एडमिन के लिए लॉक बटन */
+                    /* 🔒 एडमिन पैनल में धुंधला (Locked) बटन */
                     <button 
                       style={{ padding: '6px 12px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'not-allowed', color: '#94a3b8', fontSize: '13px' }} 
                       disabled
-                      title="एडमिन रीटेस्ट नहीं दे सकता"
                     >
                       Retest 🔄
                     </button>
                   ) : (
-                    /* 🔓 असली यूजर के लिए फुली एक्टिवेटेड बटन */
+                    /* 🔓 यूजर पैनल पर चमकदार, नीला और चालू (Active) बटन */
                     <button 
                       onClick={() => handleRetestClick(test.id)}
                       style={{ padding: '6px 12px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: '500', boxShadow: '0 2px 4px rgba(2, 132, 199, 0.2)' }}
