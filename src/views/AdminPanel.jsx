@@ -46,27 +46,36 @@ export default function AdminPanel({ onBack }) {
   }, [secretKey]);
 
   // 2. View Details click karne par Particular User ka Live Progress prapt (fetch) karna
-  const handleViewDetails = async (userItem) => {
+ const handleViewDetails = async (userItem) => {
     setSelectedUser(userItem);
     setLoadingProgress(true);
     setSelectedUserProgress(null);
 
     try {
-      // Backend se is specific user ka progress data lekar aana
+      // 🟢 तरीका 1: पूरे ऐरे में ढूंढने के बजाय सीधे उसी यूजर के प्रोग्रेस रूट को हिट करें
+      // अगर आपके पास /api/admin/get-user-progress/:userId जैसा रूट है तो उसे यूज़ करें
       const res = await axios.get(`${BACKEND_URL}/api/admin/get-user-progress`);
+      
       if (res.data.success && Array.isArray(res.data.data)) {
-        // pure data me se is user ke email ka progress dhoondhein
-        const userLiveProgress = res.data.data.find(p => p.email === userItem.email);
+        // 🔍 ध्यान दें: यहाँ चेक करें कि डेटाबेस में फील्ड का नाम क्या है!
+        // अगर प्रोग्रेस ऑब्जेक्ट में 'email' के बजाय 'userId' या 'user' है, तो उसे मैच करें
+        const userLiveProgress = res.data.data.find(p => 
+          (p.email && p.email === userItem.email) || 
+          (p.userId && p.userId === userItem._id) || 
+          (p.user && p.user === userItem._id)
+        );
         
         if (userLiveProgress) {
-          // Agar database me alag se progress data mil gaya
+          console.log("✅ यूजर का प्रोग्रेस मिल गया:", userLiveProgress);
           setSelectedUserProgress({
             ...userItem,
+            // बैकएंड के प्रोग्रेस स्ट्रक्चर के अनुसार डेटा मैप करें
             completedVideos: userLiveProgress.completedVideos || [],
             quizResults: userLiveProgress.quizResults || []
           });
         } else {
-          // Agar user ne abhi tak koi video nahi dekha ya naya user hai
+          console.log("⚠️ इस ईमेल/आईडी से कोई प्रोग्रेस मैच नहीं हुई।");
+          // Fallback: अगर मैच नहीं हुआ तो सीधे यूजर ऑब्जेक्ट का डेटा लें
           setSelectedUserProgress({
             ...userItem,
             completedVideos: userItem.completedVideos || [],
@@ -76,7 +85,6 @@ export default function AdminPanel({ onBack }) {
       }
     } catch (err) {
       console.error("User progress fetch karne me error:", err);
-      // Error aane par fallback default values ke sath show karein
       setSelectedUserProgress({
         ...userItem,
         completedVideos: userItem.completedVideos || [],
@@ -86,7 +94,6 @@ export default function AdminPanel({ onBack }) {
       setLoadingProgress(false);
     }
   };
-
   const handleActivate = async (e, customEmail) => {
     if (e) e.preventDefault();
     const targetEmail = customEmail || email; 
