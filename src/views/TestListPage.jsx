@@ -4,19 +4,21 @@ import { ProgressContext } from '../context/ProgressContext';
 export default function TestListPage({ user, onBack, progressData }) {
   const context = useContext(ProgressContext) || {};
   
-  // 🟢 एडमिन मोड या यूजर मोड के हिसाब से modules और user डेटा तय करें
+  // 🟢 एडमिन मोड या यूजर मोड के हिसाब से modules तय करें
   const modules = (progressData && progressData.length > 0) 
     ? progressData 
     : (Array.isArray(context.modules) ? context.modules : []);
 
-  // ✅ 'currentUser' को यहाँ डिफाइन किया गया है ताकि एरर न आए
   const currentUser = user || context.user || {};
-  const completedVideos = Array.isArray(currentUser.completedVideos) ? currentUser.completedVideos : [];
+  
+  // 🟢 डेटाबेस स्ट्रक्चर फिक्स: अगरcompletedVideos ऐरे नहीं है, तो देखें वीडियो काउंट नंबर में है या नहीं
+  const videoProgressCount = Number(currentUser.videoProgress) || 0;
+  const completedVideosArray = Array.isArray(currentUser.completedVideos) ? currentUser.completedVideos : [];
   const userResults = Array.isArray(currentUser.quizResults) ? currentUser.quizResults : [];
   
   const setCurrentVideo = context.setCurrentVideo || (() => {});
 
-  // 🛡️ वीडियो लिस्ट फ़िल्टरिंग
+  // 🛡️ वीडियो लिस्ट फ़िल्टरिंग लॉजिक
   let watchedVideosList = [];
   try {
     const allVideos = [];
@@ -30,9 +32,19 @@ export default function TestListPage({ user, onBack, progressData }) {
       }
     });
 
-    watchedVideosList = allVideos.filter(v => v && v.videoId && completedVideos.includes(v.videoId));
+    // 🟢 यहाँ नंबर के आधार पर या ऐरे के आधार पर (दोनों तरीकों से) फ़िल्टर करें
+    if (videoProgressCount > 0) {
+      // अगर बैकएंड से सिर्फ नंबर (जैसे 8) आया है, तो पहले 8 वीडियो को वॉचलिस्ट में शामिल करें
+      watchedVideosList = allVideos.slice(0, videoProgressCount);
+    } else {
+      // बैकअप: अगर कभी ऐरे फॉर्मेट में डेटा आए
+      watchedVideosList = allVideos.filter(v => {
+        if (!v || !v.videoId) return false;
+        return completedVideosArray.some(cv => String(cv).trim() === String(v.videoId).trim());
+      });
+    }
   } catch (err) {
-    console.error("❌ एरर:", err);
+    console.error("❌ फ़िल्टरिंग में एरर:", err);
   }
 
   const handleStartTest = (video) => {
@@ -51,7 +63,7 @@ export default function TestListPage({ user, onBack, progressData }) {
     <div style={{ padding: '15px', maxWidth: '1000px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ fontSize: '20px' }}>📝 ऑनलाइन टेस्ट लिस्ट ({watchedVideosList.length})</h2>
-        <button onClick={onBack} style={{ padding: '10px 16px', borderRadius: '6px', cursor: 'pointer' }}>◀ वापस</button>
+        <button onClick={onBack} style={{ padding: '10px 16px', borderRadius: '6px', cursor: 'pointer', background: '#475569', color: '#fff', border: 'none' }}>◀ वापस</button>
       </div>
 
       {watchedVideosList.length === 0 ? (
@@ -63,29 +75,27 @@ export default function TestListPage({ user, onBack, progressData }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
             <thead>
               <tr style={{ backgroundColor: '#1e293b', color: '#fff' }}>
-                <th style={{ padding: '14px' }}>वीडियो नाम</th>
+                <th style={{ padding: '14px', textAlign: 'left' }}>वीडियो नाम</th>
                 <th style={{ padding: '14px' }}>प्राप्त अंक</th>
                 <th style={{ padding: '14px' }}>स्थिति</th>
                 <th style={{ padding: '14px' }}>एक्शन</th>
               </tr>
             </thead>
             <tbody>
-              {watchedVideosList.map((video) => {
-                // यहाँ अब currentUser सुरक्षित है
+              {watchedVideosList.map((video, index) => {
                 const testResult = userResults.find(r => 
-                    r && String(r.videoId).trim() === String(video.videoId).trim() && 
-                    (r.passed === true || r.passed === 'true')
+                    r && String(r.videoId).trim() === String(video.videoId).trim()
                 );
 
                 return (
-                  <tr key={video.videoId} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '14px' }}>[{video.videoId}] {video.title}</td>
+                  <tr key={video.videoId || index} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '14px' }}>[{video.videoId || index + 1}] {video.title}</td>
                     <td style={{ padding: '14px', textAlign: 'center' }}>{testResult ? testResult.score : '—'}</td>
                     <td style={{ padding: '14px', textAlign: 'center' }}>
                       {testResult ? 'PASSED ✅' : 'PENDING ⏳'}
                     </td>
                     <td style={{ padding: '14px', textAlign: 'center' }}>
-                      <button onClick={() => handleStartTest(video)}>
+                      <button onClick={() => handleStartTest(video)} style={{ cursor: 'pointer', padding: '6px 12px', borderRadius: '4px' }}>
                         {testResult ? 'Retest 🔄' : 'Give Test 📝'}
                       </button>
                     </td>
