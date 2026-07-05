@@ -22,7 +22,7 @@ export default function AdminPanel({ onBack }) {
 
     setFetchingUsers(true);
     try {
-      const response = await axios.post(`${BACKEND_URL}/api/admin/users`, { secretKey: key });
+      const response = await axios.post(`${BACKEND_URL}/api/admin`, { secretKey: key });
       const progressRes = await axios.get(`${BACKEND_URL}/api/admin/get-user-progress`);
       
       if (response.data.success) setUsers(response.data.users);
