@@ -71,54 +71,57 @@ export default function AdminPanel({ onBack }) {
     }
   };
 
-  // 🟢 अगर कोई यूज़र सेलेक्ट किया गया है, तो उसे TestListPage में प्रोग्रेस डेटा के साथ भेजें
- {selectedUser && (
-  <div style={{ padding: '30px', maxWidth: '1100px', margin: '20px auto' }}>
-    <button onClick={() => setSelectedUser(null)}>← वापस</button>
-    
-    {/* 🟢 'user' और 'progressData' प्रॉप्स पास करें */}
-    <TestListPage 
-      user={selectedUser} 
-      onBack={() => setSelectedUser(null)} 
-      // सुनिश्चित करें कि progressData में वह डेटा है जो आपने backend से fetched किया है
-      progressData={progressData} 
-    />
-  </div>
-)}
-
+  // ✅ मुख्य रेंडरिंग लॉजिक
   return (
-    <div style={{ padding: '30px', maxWidth: '1100px', margin: '20px auto', color: '#1e293b', fontFamily: 'sans-serif' }}>
-      <button onClick={onBack} style={{ padding: '8px 16px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold' }}>← वापस जाएँ</button>
+    <>
+      {selectedUser ? (
+        // अगर यूज़र सिलेक्टेड है, तो टेस्ट लिस्ट दिखाएं
+        <div style={{ padding: '30px', maxWidth: '1100px', margin: '20px auto' }}>
+          <button onClick={() => setSelectedUser(null)} style={{ padding: '8px 16px', background: '#475569', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px' }}>
+            ← वापस एडमिन लिस्ट पर
+          </button>
+          <TestListPage 
+            user={selectedUser} 
+            onBack={() => setSelectedUser(null)} 
+            progressData={progressData} 
+          />
+        </div>
+      ) : (
+        // वरना एडमिन डैशबोर्ड दिखाएं
+        <div style={{ padding: '30px', maxWidth: '1100px', margin: '20px auto', color: '#1e293b', fontFamily: 'sans-serif' }}>
+          <button onClick={onBack} style={{ padding: '8px 16px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold' }}>← वापस जाएँ</button>
 
-      <div style={{ background: '#fff', padding: '30px', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', marginBottom: '30px' }}>
-        <h2 style={{ marginTop: 0, borderBottom: '2px solid #0f172a', paddingBottom: '10px' }}>🛡️ EWPP एडमिन पैनल</h2>
-        <input type="password" placeholder="सीक्रेट की..." value={secretKey} onChange={(e) => setSecretKey(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #94a3b8' }} />
-        <form onSubmit={(e) => handleActivate(e, null)} style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-          <input type="email" placeholder="ईमेल..." value={email} onChange={(e) => setEmail(e.target.value)} style={{ flex: 1, padding: '10px', borderRadius: '6px' }} />
-          <button type="submit" disabled={loading} style={{ background: '#0f172a', color: '#fff', padding: '0 20px', borderRadius: '6px', cursor: 'pointer' }}>⚡ एक्टिवेट</button>
-        </form>
-        {message && <div style={{ marginTop: '10px', color: isError ? 'red' : 'green' }}>{message}</div>}
-      </div>
+          <div style={{ background: '#fff', padding: '30px', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', marginBottom: '30px' }}>
+            <h2 style={{ marginTop: 0, borderBottom: '2px solid #0f172a', paddingBottom: '10px' }}>🛡️ EWPP एडमिन पैनल</h2>
+            <input type="password" placeholder="सीक्रेट की..." value={secretKey} onChange={(e) => setSecretKey(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #94a3b8' }} />
+            <form onSubmit={(e) => handleActivate(e, null)} style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+              <input type="email" placeholder="ईमेल..." value={email} onChange={(e) => setEmail(e.target.value)} style={{ flex: 1, padding: '10px', borderRadius: '6px' }} />
+              <button type="submit" disabled={loading} style={{ background: '#0f172a', color: '#fff', padding: '0 20px', borderRadius: '6px', cursor: 'pointer' }}>⚡ एक्टिवेट</button>
+            </form>
+            {message && <div style={{ marginTop: '10px', color: isError ? 'red' : 'green' }}>{message}</div>}
+          </div>
 
-      <div style={{ background: '#fff', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-        <h3>📋 सभी रजिस्टर्ड पार्टनर्स ({users.length})</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr style={{ background: '#f1f5f9' }}><th style={{ padding: '12px' }}>Name</th><th>Email</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody>
-            {users.map((item) => (
-              <tr key={item._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                <td style={{ padding: '12px' }}>{item.name}</td>
-                <td style={{ padding: '12px' }}>{item.email}</td>
-                <td style={{ padding: '12px' }}>{item.isPaid ? '🟢 Paid' : '🔴 Pending'}</td>
-                <td style={{ padding: '12px' }}>
-                  <button onClick={() => setSelectedUser(item)} style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', marginRight: '5px' }}>View Details</button>
-                  {!item.isPaid && <button onClick={() => handleActivate(null, item.email)} style={{ background: '#22c55e', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px' }}>⚡ Activate</button>}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+          <div style={{ background: '#fff', padding: '25px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+            <h3>📋 सभी रजिस्टर्ड पार्टनर्स ({users.length})</h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr style={{ background: '#f1f5f9' }}><th style={{ padding: '12px' }}>Name</th><th>Email</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody>
+                {users.map((item) => (
+                  <tr key={item._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '12px' }}>{item.name}</td>
+                    <td style={{ padding: '12px' }}>{item.email}</td>
+                    <td style={{ padding: '12px' }}>{item.isPaid ? '🟢 Paid' : '🔴 Pending'}</td>
+                    <td style={{ padding: '12px' }}>
+                      <button onClick={() => setSelectedUser(item)} style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', marginRight: '5px' }}>View Details</button>
+                      {!item.isPaid && <button onClick={() => handleActivate(null, item.email)} style={{ background: '#22c55e', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px' }}>⚡ Activate</button>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
